@@ -52,8 +52,10 @@ async function chat({ system, user, temperature = 0.4, maxTokens = 2000 }: ChatO
           { role: "user", content: user },
         ],
       }),
-      // Don't hang the request indefinitely.
-      signal: AbortSignal.timeout(45_000),
+      // Keep each call well under the 60s route budget; the recommend pipeline
+      // makes up to two sequential calls (spec + narrative), so 25s x2 < 60s
+      // leaves room for the graceful fallback to run instead of a hard timeout.
+      signal: AbortSignal.timeout(25_000),
     });
   } catch (err) {
     throw new OpenRouterUnavailable(`OpenRouter request failed: ${(err as Error).message}`);

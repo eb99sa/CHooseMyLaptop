@@ -37,18 +37,26 @@ export default async function ReportPage({ params }: PageProps) {
   }
 
   const report = safeJsonParse<FinalReport | null>(session.report_json, null);
-  if (!report) redirect(`/sessions/${id}/questions`);
+  if (!report || !report.spec || !report.scored) {
+    redirect(`/sessions/${id}/questions`);
+  }
 
   const { spec, scored } = report;
   const hasSeed = scored.some((s) => s.listing.source_type === "seed");
   const isEstimated = report.source === "fallback" || hasSeed;
 
-  // Curated picks (only render the ones the engine produced).
+  // Curated picks, de-duplicated by listing id so the same laptop is never
+  // shown as two separate "final recommendation" cards (small catalogs).
+  const seenPickIds = new Set<string>();
   const picks = [
-    { key: "best_overall", scored: report.best_overall, tone: "brand" as const },
-    { key: "best_value", scored: report.best_value, tone: "brand" as const },
-    { key: "best_budget", scored: report.best_budget, tone: "brand" as const },
-  ].filter((p) => p.scored);
+    { key: "best_overall", scored: report.best_overall },
+    { key: "best_value", scored: report.best_value },
+    { key: "best_budget", scored: report.best_budget },
+  ].filter((p) => {
+    if (!p.scored || seenPickIds.has(p.scored.listing.id)) return false;
+    seenPickIds.add(p.scored.listing.id);
+    return true;
+  });
 
   return (
     <>
@@ -99,7 +107,7 @@ export default async function ReportPage({ params }: PageProps) {
                       className="flex gap-2 text-sm text-[var(--color-muted)]"
                     >
                       <span className="mt-0.5 shrink-0 text-[var(--color-success)]" aria-hidden>
-                        ₪
+                        ✓
                       </span>
                       <span>{item}</span>
                     </li>

@@ -17,9 +17,14 @@ export function round(n: number, decimals = 0): number {
   return Math.round(n * f) / f;
 }
 
-/** Format a price with its currency, Arabic-friendly. */
+// Gulf 3-decimal (fils) currencies; everything else formats to 2 decimals.
+const THREE_DECIMAL_CURRENCIES = new Set(["KWD", "BHD", "OMR"]);
+
+/** Format a price with its currency, with currency-correct decimal precision. */
 export function formatPrice(amount: number, currency = "KWD"): string {
-  const value = Number.isInteger(amount) ? amount.toString() : amount.toFixed(3);
+  if (!Number.isFinite(amount)) return `— ${currency}`;
+  const decimals = THREE_DECIMAL_CURRENCIES.has(currency.toUpperCase()) ? 3 : 2;
+  const value = Number.isInteger(amount) ? amount.toString() : amount.toFixed(decimals);
   return `${value} ${currency}`;
 }
 
@@ -53,11 +58,20 @@ export function extractJson<T>(text: string): T | null {
     // fall through to bracket extraction
   }
 
-  // Find the outermost {...} or [...] block.
-  const candidates: Array<[string, string]> = [
-    ["{", "}"],
-    ["[", "]"],
-  ];
+  // Find the outermost {...} or [...] block. Try whichever opening bracket
+  // appears first so a top-level array isn't mis-read as an inner object.
+  const objStart = cleaned.indexOf("{");
+  const arrStart = cleaned.indexOf("[");
+  const arrayFirst = arrStart !== -1 && (objStart === -1 || arrStart < objStart);
+  const candidates: Array<[string, string]> = arrayFirst
+    ? [
+        ["[", "]"],
+        ["{", "}"],
+      ]
+    : [
+        ["{", "}"],
+        ["[", "]"],
+      ];
   for (const [open, close] of candidates) {
     const start = cleaned.indexOf(open);
     const end = cleaned.lastIndexOf(close);

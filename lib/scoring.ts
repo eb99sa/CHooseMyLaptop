@@ -32,6 +32,10 @@ const CURRENT_YEAR = new Date().getFullYear();
  *  - value < min      -> 0..70 (linear, harsh)
  */
 function bandScore(value: number, min: number, ideal: number): number {
+  // Defense-in-depth: never let a non-finite input produce NaN downstream.
+  if (!Number.isFinite(value)) value = 0;
+  if (!Number.isFinite(min)) min = 0;
+  if (!Number.isFinite(ideal)) ideal = 0;
   if (min <= 0 && ideal <= 0) return 100; // nothing required
   const hi = Math.max(ideal, min);
   if (value >= hi) return 100;
@@ -73,8 +77,8 @@ function scoreUseCaseFit(s: LaptopSpecs, spec: SpecRecommendation): number {
   const storage = bandScore(s.storage_gb, min.storage_gb, ideal.storage_gb);
   const gpu = bandScore(
     s.gpu_tier,
-    GPU_CLASS_MIN_TIER[min.gpu],
-    GPU_CLASS_MIN_TIER[ideal.gpu],
+    GPU_CLASS_MIN_TIER[min.gpu] ?? 0,
+    GPU_CLASS_MIN_TIER[ideal.gpu] ?? 0,
   );
   const width = resolutionWidth(s.display_resolution);
   const display = clamp(
@@ -311,11 +315,17 @@ export function pickRecommendations(
 
   const best_value = [...pool].sort((a, b) => b.roi_score - a.roi_score)[0];
 
-  // Worst candidate, surfaced only if it's genuinely weak.
+  // Worst candidate, surfaced only if it's genuinely weak AND it isn't already
+  // recommended as one of the positive picks (avoid contradictory labeling).
+  const pickedIds = new Set(
+    [best_overall, best_budget, best_value]
+      .filter((p): p is ScoredLaptop => Boolean(p))
+      .map((p) => p.listing.id),
+  );
   const worst = [...scored].sort((a, b) => a.final_score - b.final_score)[0];
   const avoid =
     worst &&
-    worst.listing.id !== best_overall?.listing.id &&
+    !pickedIds.has(worst.listing.id) &&
     (worst.final_score < 55 || worst.warnings.length >= 2)
       ? worst
       : undefined;
@@ -332,14 +342,18 @@ export function fallbackSpecRecommendation(basic: BasicNeeds): SpecRecommendatio
   const minimum: SpecTarget = { ...baseline.minimum };
   const ideal: SpecTarget = { ...baseline.ideal };
 
-  // Fair price band derived from the user's stated budget.
+  // Fair price band derived from the user's stated budget. Built monotonically
+  // so too_low < fair_min <= fair_max < overpriced always holds (even for very
+  // wide budget ranges or budget_min = 0).
   const mid = (basic.budget_min + basic.budget_max) / 2 || basic.budget_max || 250;
+  const fair_min = round(basic.budget_min || mid * 0.7);
+  const fair_max = round(basic.budget_max || mid * 1.05);
   const price_range: PriceRange = {
     currency: basic.currency || "KWD",
-    too_low: round(mid * 0.45),
-    fair_min: round(basic.budget_min || mid * 0.7),
-    fair_max: round(basic.budget_max || mid * 1.05),
-    overpriced: round((basic.budget_max || mid) * 1.25),
+    too_low: round(fair_min * 0.6),
+    fair_min,
+    fair_max,
+    overpriced: round(fair_max * 1.25),
     explanation:
       "النطاق العادل مبني على ميزانيتك واحتياجك. السعر الأقل بكثير قد يعني جهازاً قديماً، والأعلى بكثير مبالغة لا تحتاجها.",
   };

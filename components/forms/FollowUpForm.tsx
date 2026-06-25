@@ -66,6 +66,21 @@ export function FollowUpForm({ sessionId, questions }: FollowUpFormProps) {
     e.preventDefault();
     if (pending) return;
     setError(null);
+
+    // Require the quick choice questions (single-select / yes-no) to be answered.
+    // Text, number, and multi-select are left optional.
+    const unanswered = questions.filter((q) => {
+      if (q.question_type === "single_select" || q.question_type === "boolean") {
+        const v = answers[q.question_key];
+        return typeof v !== "string" || v === "";
+      }
+      return false;
+    });
+    if (unanswered.length > 0) {
+      setError("الرجاء الإجابة على الأسئلة المطلوبة قبل المتابعة.");
+      return;
+    }
+
     setPending(true);
 
     try {

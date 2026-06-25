@@ -126,7 +126,7 @@ create table if not exists public.recommendation_results (
   fit_score           numeric,
   roi_score           numeric,
   final_score         numeric,
-  recommendation_type text,  -- best_overall | best_budget | best_value | avoid | ranked
+  recommendation_type text,  -- best_overall | best_budget | best_value | avoid
   reasoning           text,
   warnings_json       jsonb,
   created_at          timestamptz not null default now()

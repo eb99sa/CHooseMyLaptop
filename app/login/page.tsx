@@ -18,8 +18,9 @@ export default async function LoginPage({
 
   const sp = await searchParams;
   const redirectParam = sp.redirect;
+  // Reject protocol-relative / backslash paths to prevent open redirects.
   const redirectTo =
-    typeof redirectParam === "string" && redirectParam.startsWith("/")
+    typeof redirectParam === "string" && /^\/(?![/\\])/.test(redirectParam)
       ? redirectParam
       : "/dashboard";
 

@@ -20,7 +20,7 @@ export function LaptopCard({ scored, highlight = false, badgeLabel }: LaptopCard
     s.cpu,
     `${s.ram_gb} GB رام`,
     `${s.storage_gb} GB ${s.storage_type}`,
-    `شاشة "${s.display_inch}`,
+    `شاشة ${s.display_inch} بوصة`,
     s.gpu,
     `${s.battery_hours} ساعات بطارية`,
     `${s.weight_kg} كجم`,

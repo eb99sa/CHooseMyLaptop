@@ -75,6 +75,11 @@ drop policy if exists results_insert_own on public.recommendation_results;
 create policy results_insert_own on public.recommendation_results
   for insert with check (public.owns_session(session_id));
 
+-- DELETE is required: re-running a recommendation clears prior rows first.
+drop policy if exists results_delete_own on public.recommendation_results;
+create policy results_delete_own on public.recommendation_results
+  for delete using (public.owns_session(session_id));
+
 -- ---------------------------------------------------------------------------
 -- laptop_listings + laptop_reviews — public read, no client writes
 -- (writes happen via the service-role key, which bypasses RLS)
@@ -104,5 +109,6 @@ create policy knowledge_emb_read on public.knowledge_embeddings
 -- ---------------------------------------------------------------------------
 drop policy if exists events_insert_self on public.admin_analytics_events;
 create policy events_insert_self on public.admin_analytics_events
-  for insert with check (user_id = auth.uid() or user_id is null);
--- (No SELECT policy: only the service-role key can read these.)
+  for insert to authenticated with check (user_id = auth.uid());
+-- (No SELECT policy: only the service-role key can read these. Anonymous
+--  clients cannot insert, preventing analytics/log spam.)

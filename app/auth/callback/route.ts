@@ -7,16 +7,21 @@ export const runtime = "nodejs";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") || "/dashboard";
+  const candidate = searchParams.get("next") || "/dashboard";
 
-  // Only allow internal redirect targets.
-  const safeNext = next.startsWith("/") ? next : "/dashboard";
+  // Only allow internal paths: a single leading slash, NOT "//host" or "/\host"
+  // (both normalize to off-origin in browsers — classic open-redirect vector).
+  const safeNext = /^\/(?![/\\])/.test(candidate) ? candidate : "/dashboard";
 
   if (code) {
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(new URL(safeNext, origin));
+      const dest = new URL(safeNext, origin);
+      // Defense-in-depth: never redirect off the app's own origin.
+      return NextResponse.redirect(
+        dest.origin === origin ? dest : new URL("/dashboard", origin),
+      );
     }
   }
 

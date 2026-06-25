@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { UI } from "@/lib/i18n";
-import { cn, formatPrice } from "@/lib/utils";
+import { cn, formatPrice, safeJsonParse } from "@/lib/utils";
 import type {
   FinalReport,
   RecommendationSessionRow,
@@ -63,7 +63,7 @@ export default async function ComparePage({ params }: PageProps) {
   const session = data as RecommendationSessionRow | null;
   if (!session) redirect("/dashboard");
 
-  const report = session.report_json as FinalReport | null;
+  const report = safeJsonParse<FinalReport | null>(session.report_json, null);
   if (!report || !report.scored?.length) {
     redirect(`/sessions/${id}/report`);
   }

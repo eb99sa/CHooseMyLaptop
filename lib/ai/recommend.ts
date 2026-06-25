@@ -1,11 +1,21 @@
 import type {
   BasicNeeds,
   FinalReport,
+  GpuClass,
   LaptopListing,
   SpecRecommendation,
   SpecTarget,
   UserAnswer,
 } from "@/lib/types";
+
+// The AI is asked for one of these gpu classes; anything else is rejected so a
+// stray string can never become an invalid scoring key (would yield NaN).
+const GPU_CLASSES = new Set<string>([
+  "integrated",
+  "entry_dedicated",
+  "mid_dedicated",
+  "high_dedicated",
+]);
 import { chatJson, isAiConfigured } from "@/lib/ai/openrouter";
 import {
   NARRATIVE_SYSTEM,
@@ -30,7 +40,10 @@ function mergeTarget(base: SpecTarget, raw: Partial<SpecTarget> | undefined): Sp
     ram_gb: num(raw.ram_gb, base.ram_gb),
     storage_gb: num(raw.storage_gb, base.storage_gb),
     storage_type: raw.storage_type ?? base.storage_type,
-    gpu: raw.gpu ?? base.gpu,
+    gpu:
+      typeof raw.gpu === "string" && GPU_CLASSES.has(raw.gpu)
+        ? (raw.gpu as GpuClass)
+        : base.gpu,
     display_inch_min: num(raw.display_inch_min, base.display_inch_min),
     display_inch_max: num(raw.display_inch_max, base.display_inch_max),
     display_quality:
