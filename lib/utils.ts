@@ -87,17 +87,6 @@ export function extractJson<T>(text: string): T | null {
   return null;
 }
 
-/** Check whether an email is in the admin allow-list (env: ADMIN_EMAILS). */
-export function isAdminEmail(email: string | null | undefined): boolean {
-  if (!email) return false;
-  const raw = process.env.ADMIN_EMAILS ?? "";
-  const allow = raw
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-  return allow.includes(email.toLowerCase());
-}
-
 /** Format an ISO date as a short readable Arabic-locale string. */
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";

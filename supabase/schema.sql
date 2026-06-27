@@ -1,81 +1,66 @@
 -- ===========================================================================
--- CHooseMyLaptop — Database schema (Supabase Postgres)
--- Run this in: Supabase Dashboard > SQL Editor (or `supabase db push`).
+-- CHooseMyLaptop — Database schema (anonymous, no user accounts)
 -- Run order: 1) schema.sql  2) rls.sql  3) seed.sql
+--
+-- The app is anonymous: there are NO user accounts, profiles, or auth. Each
+-- recommendation attempt is an anonymous session. All DB access happens
+-- server-side via the Supabase service-role key (see lib/supabase/service.ts);
+-- RLS is enabled with NO public policies so the anon/public API cannot read or
+-- write these tables directly (defense in depth).
 -- ===========================================================================
 
--- Extensions ---------------------------------------------------------------
-create extension if not exists pgcrypto;      -- gen_random_uuid()
-create extension if not exists vector;         -- pgvector (RAG, Phase 2)
+create extension if not exists pgcrypto;   -- gen_random_uuid()
+create extension if not exists vector;       -- pgvector (RAG, Phase 2)
+
+-- Migrating from the previous version? Drop old/renamed objects first.
+-- NOTE: this drops laptop_listings/laptop_reviews/admin_analytics_events so
+-- their new columns (country, city_or_area, anonymous_session_id) apply; re-run
+-- seed.sql afterwards to repopulate the catalog.
+drop table if exists public.recommendation_results cascade;
+drop table if exists public.user_answers cascade;
+drop table if exists public.ai_questions cascade;
+drop table if exists public.recommendation_sessions cascade;
+drop table if exists public.users_profile cascade;
+drop table if exists public.admin_analytics_events cascade;
+drop table if exists public.laptop_reviews cascade;
+drop table if exists public.laptop_listings cascade;
+drop function if exists public.handle_new_user() cascade;
+drop function if exists public.owns_session(uuid) cascade;
+drop function if exists public.set_updated_at() cascade;
 
 -- ---------------------------------------------------------------------------
--- users_profile
+-- anonymous_recommendation_sessions
+-- One row per recommendation attempt. No personal identity is stored.
+-- `session_token_hash` is sha256(raw token); the raw token lives only in an
+-- HTTP-only cookie in the user's browser so the same browser can reload its
+-- report for a limited time. Location is stored as approximate area only.
 -- ---------------------------------------------------------------------------
-create table if not exists public.users_profile (
-  id                 uuid primary key default gen_random_uuid(),
-  auth_user_id       uuid not null unique references auth.users (id) on delete cascade,
-  full_name          text,
-  preferred_language text not null default 'ar',
-  country            text,
-  city               text,
-  created_at         timestamptz not null default now()
+create table if not exists public.anonymous_recommendation_sessions (
+  id                        uuid primary key default gen_random_uuid(),
+  session_token_hash        text not null,
+  status                    text not null default 'questions_ready'
+                              check (status in ('questions_ready','answered','completed','failed')),
+  budget_min                numeric,
+  budget_max                numeric,
+  currency                  text default 'KWD',
+  country                   text,
+  city_or_area              text,
+  location_source           text not null default 'skipped'
+                              check (location_source in ('browser_geolocation','manual_search','skipped')),
+  primary_use_case          text,
+  basic_needs_json          jsonb,
+  answers_json              jsonb,
+  ai_followup_questions_json jsonb,
+  recommended_specs_json    jsonb,
+  recommendation_result_json jsonb,
+  created_at                timestamptz not null default now(),
+  expires_at                timestamptz not null default (now() + interval '7 days')
 );
-
--- ---------------------------------------------------------------------------
--- recommendation_sessions
--- user_id stores the auth.users id directly so RLS stays simple.
--- basic_needs_json / spec_json / report_json cache the full structured payloads.
--- ---------------------------------------------------------------------------
-create table if not exists public.recommendation_sessions (
-  id               uuid primary key default gen_random_uuid(),
-  user_id          uuid not null references auth.users (id) on delete cascade,
-  status           text not null default 'draft'
-                     check (status in ('draft','questions_ready','answered','completed','failed')),
-  budget_min       numeric,
-  budget_max       numeric,
-  currency         text default 'KWD',
-  country          text,
-  city             text,
-  primary_use_case text,
-  basic_needs_json jsonb,
-  spec_json        jsonb,
-  report_json      jsonb,
-  created_at       timestamptz not null default now(),
-  updated_at       timestamptz not null default now()
-);
-create index if not exists idx_sessions_user on public.recommendation_sessions (user_id);
-create index if not exists idx_sessions_status on public.recommendation_sessions (status);
-create index if not exists idx_sessions_use_case on public.recommendation_sessions (primary_use_case);
-
--- ---------------------------------------------------------------------------
--- user_answers
--- ---------------------------------------------------------------------------
-create table if not exists public.user_answers (
-  id           uuid primary key default gen_random_uuid(),
-  session_id   uuid not null references public.recommendation_sessions (id) on delete cascade,
-  question_key text not null,
-  question_text text,
-  answer_value text,
-  answer_type  text,
-  created_at   timestamptz not null default now()
-);
-create index if not exists idx_answers_session on public.user_answers (session_id);
-
--- ---------------------------------------------------------------------------
--- ai_questions
--- ---------------------------------------------------------------------------
-create table if not exists public.ai_questions (
-  id                  uuid primary key default gen_random_uuid(),
-  session_id          uuid not null references public.recommendation_sessions (id) on delete cascade,
-  question_key        text,
-  question_text       text not null,
-  question_type       text,
-  options_json        jsonb,
-  reason_for_question text,
-  sort_order          int default 0,
-  created_at          timestamptz not null default now()
-);
-create index if not exists idx_questions_session on public.ai_questions (session_id);
+create index if not exists idx_anon_sessions_token on public.anonymous_recommendation_sessions (session_token_hash);
+create index if not exists idx_anon_sessions_status on public.anonymous_recommendation_sessions (status);
+create index if not exists idx_anon_sessions_created on public.anonymous_recommendation_sessions (created_at);
+create index if not exists idx_anon_sessions_use_case on public.anonymous_recommendation_sessions (primary_use_case);
+create index if not exists idx_anon_sessions_expires on public.anonymous_recommendation_sessions (expires_at);
 
 -- ---------------------------------------------------------------------------
 -- laptop_listings (catalog)
@@ -90,6 +75,8 @@ create table if not exists public.laptop_listings (
   currency        text not null default 'KWD',
   availability    text default 'unknown',
   url             text,
+  country         text,
+  city_or_area    text,
   specs_json      jsonb not null default '{}'::jsonb,
   rating          numeric,
   review_count    int,
@@ -99,6 +86,7 @@ create table if not exists public.laptop_listings (
 );
 create index if not exists idx_listings_price on public.laptop_listings (price);
 create index if not exists idx_listings_brand on public.laptop_listings (brand);
+create index if not exists idx_listings_country on public.laptop_listings (country);
 
 -- ---------------------------------------------------------------------------
 -- laptop_reviews
@@ -115,24 +103,6 @@ create table if not exists public.laptop_reviews (
   created_at        timestamptz not null default now()
 );
 create index if not exists idx_reviews_listing on public.laptop_reviews (laptop_listing_id);
-
--- ---------------------------------------------------------------------------
--- recommendation_results (normalized rows for analytics + CSV export)
--- ---------------------------------------------------------------------------
-create table if not exists public.recommendation_results (
-  id                  uuid primary key default gen_random_uuid(),
-  session_id          uuid not null references public.recommendation_sessions (id) on delete cascade,
-  laptop_listing_id   uuid references public.laptop_listings (id) on delete set null,
-  fit_score           numeric,
-  roi_score           numeric,
-  final_score         numeric,
-  recommendation_type text,  -- best_overall | best_budget | best_value | avoid
-  reasoning           text,
-  warnings_json       jsonb,
-  created_at          timestamptz not null default now()
-);
-create index if not exists idx_results_session on public.recommendation_results (session_id);
-create index if not exists idx_results_listing on public.recommendation_results (laptop_listing_id);
 
 -- ---------------------------------------------------------------------------
 -- knowledge_documents + knowledge_embeddings (RAG — Phase 2 scaffold)
@@ -155,55 +125,18 @@ create table if not exists public.knowledge_embeddings (
   metadata_json jsonb,
   created_at    timestamptz not null default now()
 );
--- Approximate nearest-neighbor index for cosine similarity (used in Phase 2).
 create index if not exists idx_embeddings_vector
   on public.knowledge_embeddings using ivfflat (embedding vector_cosine_ops) with (lists = 100);
 
 -- ---------------------------------------------------------------------------
--- admin_analytics_events
+-- admin_analytics_events (anonymous; references the anonymous session only)
 -- ---------------------------------------------------------------------------
 create table if not exists public.admin_analytics_events (
-  id            uuid primary key default gen_random_uuid(),
-  user_id       uuid references auth.users (id) on delete set null,
-  event_type    text not null,
-  event_payload jsonb,
-  created_at    timestamptz not null default now()
+  id                   uuid primary key default gen_random_uuid(),
+  anonymous_session_id uuid references public.anonymous_recommendation_sessions (id) on delete set null,
+  event_type           text not null,
+  event_payload        jsonb,
+  created_at           timestamptz not null default now()
 );
 create index if not exists idx_events_type on public.admin_analytics_events (event_type);
 create index if not exists idx_events_created on public.admin_analytics_events (created_at);
-
--- ---------------------------------------------------------------------------
--- updated_at trigger for sessions
--- ---------------------------------------------------------------------------
-create or replace function public.set_updated_at()
-returns trigger language plpgsql set search_path = '' as $$
-begin
-  new.updated_at = now();
-  return new;
-end; $$;
-
-drop trigger if exists trg_sessions_updated_at on public.recommendation_sessions;
-create trigger trg_sessions_updated_at
-  before update on public.recommendation_sessions
-  for each row execute function public.set_updated_at();
-
--- ---------------------------------------------------------------------------
--- Auto-create a profile row when a new auth user signs up.
--- ---------------------------------------------------------------------------
-create or replace function public.handle_new_user()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  insert into public.users_profile (auth_user_id, full_name)
-  values (new.id, coalesce(new.raw_user_meta_data->>'full_name', null))
-  on conflict (auth_user_id) do nothing;
-  return new;
-end; $$;
-
-drop trigger if exists trg_on_auth_user_created on auth.users;
-create trigger trg_on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
-
--- handle_new_user is trigger-only: don't expose it as a public REST RPC.
--- (The trigger still fires after these revokes — triggers bypass EXECUTE checks.)
-revoke execute on function public.handle_new_user() from public, anon, authenticated;

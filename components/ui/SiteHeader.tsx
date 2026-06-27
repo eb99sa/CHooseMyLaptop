@@ -1,42 +1,20 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
-import { SignOutButton } from "@/components/ui/SignOutButton";
-import { isAdminEmail } from "@/lib/utils";
+import { UI } from "@/lib/i18n";
 
-interface SiteHeaderProps {
-  email?: string | null;
-  showDashboardLink?: boolean;
-}
-
-// Server component. Renders top navigation; only shows sign-out when logged in.
-export function SiteHeader({ email, showDashboardLink = true }: SiteHeaderProps) {
-  const admin = isAdminEmail(email);
+// Server component. Anonymous app: no auth, no email, no admin links.
+// Left: brand logo linking home. Right: a single "new recommendation" ghost link.
+export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--color-line)] bg-[var(--color-surface)]/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href={email ? "/dashboard" : "/"} aria-label="الرئيسية">
+        <Link href="/" aria-label="الرئيسية">
           <Logo />
         </Link>
         <nav className="flex items-center gap-2 sm:gap-3">
-          {email ? (
-            <>
-              {showDashboardLink && (
-                <Link href="/dashboard" className="btn btn-ghost text-sm">
-                  لوحتي
-                </Link>
-              )}
-              {admin && (
-                <Link href="/admin" className="btn btn-ghost text-sm">
-                  الإدارة
-                </Link>
-              )}
-              <SignOutButton />
-            </>
-          ) : (
-            <Link href="/login" className="btn btn-primary text-sm">
-              تسجيل الدخول
-            </Link>
-          )}
+          <Link href="/sessions/new" className="btn btn-ghost text-sm">
+            {UI.newSession}
+          </Link>
         </nav>
       </div>
     </header>

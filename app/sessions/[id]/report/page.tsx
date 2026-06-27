@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
+import { getSessionForViewer } from "@/lib/services/sessions";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { Card, CardTitle, CardMuted } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -8,35 +8,29 @@ import { LaptopCard } from "@/components/report/LaptopCard";
 import { SpecBlock } from "@/components/report/SpecBlock";
 import { RECOMMENDATION_TYPE_LABELS, UI } from "@/lib/i18n";
 import { formatPrice, safeJsonParse } from "@/lib/utils";
-import type { FinalReport, RecommendationSessionRow } from "@/lib/types";
+import type { FinalReport } from "@/lib/types";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-// Recommendation report — server component. Reads the session, parses the
-// FinalReport, and lays out summary, specs, price, picks, options, narrative.
+// Recommendation report — anonymous server component. Reads the session for the
+// current browser, parses the FinalReport, and lays out summary, specs, price,
+// picks, options, and narrative.
 export default async function ReportPage({ params }: PageProps) {
   const { id } = await params;
 
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  const session = await getSessionForViewer(id);
+  if (!session) redirect("/sessions/new");
 
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("recommendation_sessions")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-
-  const session = data as RecommendationSessionRow | null;
-  if (!session) redirect("/dashboard");
-
-  if (session.status !== "completed" || !session.report_json) {
+  if (session.status !== "completed" || !session.recommendation_result_json) {
     redirect(`/sessions/${id}/questions`);
   }
 
-  const report = safeJsonParse<FinalReport | null>(session.report_json, null);
+  const report = safeJsonParse<FinalReport | null>(
+    session.recommendation_result_json,
+    null,
+  );
   if (!report || !report.spec || !report.scored) {
     redirect(`/sessions/${id}/questions`);
   }
@@ -44,6 +38,7 @@ export default async function ReportPage({ params }: PageProps) {
   const { spec, scored } = report;
   const hasSeed = scored.some((s) => s.listing.source_type === "seed");
   const isEstimated = report.source === "fallback" || hasSeed;
+  const locationSkipped = session.location_source === "skipped";
 
   // Curated picks, de-duplicated by listing id so the same laptop is never
   // shown as two separate "final recommendation" cards (small catalogs).
@@ -60,7 +55,7 @@ export default async function ReportPage({ params }: PageProps) {
 
   return (
     <>
-      <SiteHeader email={user.email} />
+      <SiteHeader />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
         <div className="animate-fadeup space-y-8">
           {/* Header */}
@@ -73,6 +68,9 @@ export default async function ReportPage({ params }: PageProps) {
             </div>
             {isEstimated && (
               <CardMuted className="max-w-3xl">{UI.estimatedNote}</CardMuted>
+            )}
+            {locationSkipped && (
+              <CardMuted className="max-w-3xl">{UI.nearbyNeedsLocation}</CardMuted>
             )}
           </header>
 

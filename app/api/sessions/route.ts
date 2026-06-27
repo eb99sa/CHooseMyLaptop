@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
-import { createSessionWithQuestions } from "@/lib/services/sessions";
+import { createServiceClient, isDbConfigured } from "@/lib/supabase/service";
+import { createAnonymousSession } from "@/lib/services/sessions";
+import { setSessionCookie } from "@/lib/session";
 import { normalizeBasicNeeds } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
-// POST /api/sessions — create a session from Page 1 + generate follow-ups.
+// POST /api/sessions — create an anonymous session from Page 1 + generate
+// follow-up questions, and set the session cookie. No login required.
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!isDbConfigured()) {
+    return NextResponse.json(
+      { error: "not_configured", message: "الخدمة غير مهيأة بعد. حاول لاحقاً." },
+      { status: 503 },
+    );
   }
 
   let body: unknown;
@@ -28,8 +32,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const supabase = await createSupabaseServerClient();
-    const { sessionId } = await createSessionWithQuestions(supabase, user.id, basic);
+    const supabase = createServiceClient();
+    const { sessionId, token } = await createAnonymousSession(supabase, basic);
+    await setSessionCookie(sessionId, token);
     return NextResponse.json({ session_id: sessionId });
   } catch (err) {
     return NextResponse.json(

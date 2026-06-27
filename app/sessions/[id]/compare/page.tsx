@@ -1,14 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
+import { getSessionForViewer } from "@/lib/services/sessions";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { UI } from "@/lib/i18n";
 import { cn, formatPrice, safeJsonParse } from "@/lib/utils";
-import type {
-  FinalReport,
-  RecommendationSessionRow,
-  ScoredLaptop,
-} from "@/lib/types";
+import type { FinalReport, ScoredLaptop } from "@/lib/types";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -46,24 +42,17 @@ const ROWS: CompareRow[] = [
   },
 ];
 
-// Side-by-side comparison of the top scored laptops — server component.
+// Side-by-side comparison of the top scored laptops — anonymous server component.
 export default async function ComparePage({ params }: PageProps) {
   const { id } = await params;
 
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  const session = await getSessionForViewer(id);
+  if (!session) redirect("/sessions/new");
 
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("recommendation_sessions")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-
-  const session = data as RecommendationSessionRow | null;
-  if (!session) redirect("/dashboard");
-
-  const report = safeJsonParse<FinalReport | null>(session.report_json, null);
+  const report = safeJsonParse<FinalReport | null>(
+    session.recommendation_result_json,
+    null,
+  );
   if (!report || !report.scored?.length) {
     redirect(`/sessions/${id}/report`);
   }
@@ -73,7 +62,7 @@ export default async function ComparePage({ params }: PageProps) {
 
   return (
     <>
-      <SiteHeader email={user.email} />
+      <SiteHeader />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
         <div className="animate-fadeup space-y-6">
           <header className="flex flex-wrap items-center justify-between gap-3">

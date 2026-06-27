@@ -4,11 +4,12 @@ import { SiteHeader } from "@/components/ui/SiteHeader";
 import { Charts } from "@/components/admin/Charts";
 import { ExportButtons } from "@/components/admin/ExportButtons";
 import { StatCard } from "@/components/admin/StatCard";
-import { getCurrentUser } from "@/lib/supabase/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { AdminSignOut } from "@/components/admin/AdminSignOut";
+import { createServiceClient, isDbConfigured } from "@/lib/supabase/service";
+import { isAdminRequest } from "@/lib/admin-cookies";
 import { USE_CASE_LABELS, UI } from "@/lib/i18n";
-import { formatDate, isAdminEmail } from "@/lib/utils";
-import type { UseCase } from "@/lib/types";
+import { formatDate, safeJsonParse } from "@/lib/utils";
+import type { FinalReport, LocationSource, UseCase } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,17 +25,10 @@ interface SessionRow {
   primary_use_case: string | null;
   budget_min: number | null;
   budget_max: number | null;
+  location_source: string | null;
+  country: string | null;
   created_at: string;
-}
-
-interface ResultRow {
-  laptop_listing_id: string | null;
-  recommendation_type: string | null;
-}
-
-interface ListingTitleRow {
-  id: string;
-  product_title: string | null;
+  recommendation_result_json: unknown;
 }
 
 interface ActivityRow {
@@ -45,11 +39,17 @@ interface ActivityRow {
 
 // Arabic labels for the session-status pie chart.
 const STATUS_LABELS: Record<string, string> = {
-  draft: "مسودة",
   questions_ready: "أسئلة جاهزة",
   answered: "تمت الإجابة",
   completed: "مكتملة",
   failed: "فاشلة",
+};
+
+// Arabic labels for the location-source distribution chart.
+const LOCATION_SOURCE_LABELS: Record<LocationSource, string> = {
+  browser_geolocation: "تحديد تلقائي من المتصفح",
+  manual_search: "بحث يدوي",
+  skipped: "تم التخطّي",
 };
 
 const BUDGET_BUCKETS = [
@@ -64,11 +64,16 @@ function useCaseLabel(key: string | null): string {
   return USE_CASE_LABELS[key as UseCase] ?? key;
 }
 
-function aggregate(sessions: SessionRow[], results: ResultRow[], titleMap: Map<string, string>) {
+function locationSourceLabel(key: string | null): string {
+  if (!key) return "غير محدد";
+  return LOCATION_SOURCE_LABELS[key as LocationSource] ?? key;
+}
+
+function aggregate(sessions: SessionRow[]) {
   // Status counts.
   const statusCounts = new Map<string, number>();
   for (const s of sessions) {
-    const key = s.status ?? "draft";
+    const key = s.status ?? "questions_ready";
     statusCounts.set(key, (statusCounts.get(key) ?? 0) + 1);
   }
   const completed = statusCounts.get("completed") ?? 0;
@@ -101,15 +106,28 @@ function aggregate(sessions: SessionRow[], results: ResultRow[], titleMap: Map<s
   }
   const budgets: Datum[] = bucketCounts.map((b) => ({ name: b.name, value: b.count }));
 
-  // Most recommended models (best_overall only).
+  // Location-source distribution.
+  const locationCounts = new Map<string, number>();
+  for (const s of sessions) {
+    const key = s.location_source ?? "";
+    if (!key) continue;
+    locationCounts.set(key, (locationCounts.get(key) ?? 0) + 1);
+  }
+  const locationSources: Datum[] = Array.from(locationCounts.entries())
+    .map(([k, v]) => ({ name: locationSourceLabel(k), value: v }))
+    .sort((a, b) => b.value - a.value);
+
+  // Most recommended models — parse each session's stored report defensively and
+  // read best_overall.listing.product_title.
   const modelCounts = new Map<string, number>();
-  for (const r of results) {
-    if (r.recommendation_type !== "best_overall") continue;
-    if (!r.laptop_listing_id) continue;
-    modelCounts.set(r.laptop_listing_id, (modelCounts.get(r.laptop_listing_id) ?? 0) + 1);
+  for (const s of sessions) {
+    const report = safeJsonParse<FinalReport | null>(s.recommendation_result_json, null);
+    const title = report?.best_overall?.listing?.product_title;
+    if (!title) continue;
+    modelCounts.set(title, (modelCounts.get(title) ?? 0) + 1);
   }
   const models: Datum[] = Array.from(modelCounts.entries())
-    .map(([id, v]) => ({ name: titleMap.get(id) ?? id.slice(0, 8), value: v }))
+    .map(([name, v]) => ({ name, value: v }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 8);
 
@@ -122,66 +140,52 @@ function aggregate(sessions: SessionRow[], results: ResultRow[], titleMap: Map<s
     useCases,
     budgets,
     models,
+    locationSources,
   };
 }
 
 export default async function AdminDashboardPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
-  if (!isAdminEmail(user.email)) redirect("/dashboard");
+  if (!(await isAdminRequest())) redirect("/admin/login");
 
-  // Service-role client may throw if SUPABASE_SERVICE_ROLE_KEY is missing.
+  // Service-role client may throw if credentials are missing.
   let adminError = false;
   let agg: ReturnType<typeof aggregate> | null = null;
   let activity: ActivityRow[] = [];
 
-  try {
-    const admin = createSupabaseAdminClient();
-
-    const [sessionsRes, resultsRes, activityRes] = await Promise.all([
-      admin
-        .from("recommendation_sessions")
-        .select("id,status,primary_use_case,budget_min,budget_max,created_at")
-        .limit(5000),
-      admin
-        .from("recommendation_results")
-        .select("laptop_listing_id,recommendation_type")
-        .eq("recommendation_type", "best_overall")
-        .limit(5000),
-      admin
-        .from("admin_analytics_events")
-        .select("event_type,created_at,event_payload")
-        .order("created_at", { ascending: false })
-        .limit(20),
-    ]);
-
-    const sessions = (sessionsRes.data ?? []) as SessionRow[];
-    const results = (resultsRes.data ?? []) as ResultRow[];
-    activity = (activityRes.data ?? []) as ActivityRow[];
-
-    // Map listing ids -> titles for the "most recommended" chart.
-    const ids = Array.from(
-      new Set(results.map((r) => r.laptop_listing_id).filter((x): x is string => Boolean(x))),
-    );
-    const titleMap = new Map<string, string>();
-    if (ids.length) {
-      const { data: listingRows } = await admin
-        .from("laptop_listings")
-        .select("id,product_title")
-        .in("id", ids);
-      for (const row of (listingRows ?? []) as ListingTitleRow[]) {
-        titleMap.set(row.id, row.product_title ?? row.id.slice(0, 8));
-      }
-    }
-
-    agg = aggregate(sessions, results, titleMap);
-  } catch {
+  if (!isDbConfigured()) {
     adminError = true;
+  } else {
+    try {
+      const admin = createServiceClient();
+
+      const [sessionsRes, activityRes] = await Promise.all([
+        admin
+          .from("anonymous_recommendation_sessions")
+          .select(
+            "id,status,primary_use_case,budget_min,budget_max,location_source,country,created_at,recommendation_result_json",
+          )
+          .limit(5000),
+        admin
+          .from("admin_analytics_events")
+          .select("event_type,created_at,event_payload")
+          .order("created_at", { ascending: false })
+          .limit(20),
+      ]);
+
+      if (sessionsRes.error) throw new Error(sessionsRes.error.message);
+
+      const sessions = (sessionsRes.data ?? []) as SessionRow[];
+      activity = (activityRes.data ?? []) as ActivityRow[];
+
+      agg = aggregate(sessions);
+    } catch {
+      adminError = true;
+    }
   }
 
   return (
     <div className="min-h-screen bg-[var(--color-canvas)]">
-      <SiteHeader email={user.email} showDashboardLink />
+      <SiteHeader />
 
       <main className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -191,9 +195,12 @@ export default async function AdminDashboardPage() {
               نظرة عامة على الجلسات والتوصيات وأكثر الأجهزة ترشيحاً.
             </p>
           </div>
-          <Link href="/admin/listings" className="btn btn-ghost text-sm">
-            إدارة الأجهزة ←
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/admin/listings" className="btn btn-ghost text-sm">
+              إدارة الأجهزة ←
+            </Link>
+            <AdminSignOut />
+          </div>
         </div>
 
         {adminError || !agg ? (
@@ -202,11 +209,15 @@ export default async function AdminDashboardPage() {
               لوحة الإدارة غير مُفعّلة
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-[var(--color-muted)]">
-              لعرض الإحصائيات تحتاج إلى ضبط متغيّر البيئة{" "}
+              لعرض الإحصائيات تحتاج إلى ضبط متغيّرات قاعدة البيانات على الخادم{" "}
+              <code className="rounded bg-[var(--color-canvas)] px-1.5 py-0.5 font-mono text-[var(--color-ink)]">
+                NEXT_PUBLIC_SUPABASE_URL
+              </code>{" "}
+              و{" "}
               <code className="rounded bg-[var(--color-canvas)] px-1.5 py-0.5 font-mono text-[var(--color-ink)]">
                 SUPABASE_SERVICE_ROLE_KEY
               </code>{" "}
-              في إعدادات المشروع، ثم إعادة التشغيل. هذا المفتاح يُستخدم فقط على الخادم
+              في إعدادات المشروع، ثم إعادة التشغيل. تُستخدم هذه المفاتيح على الخادم فقط
               لتجميع البيانات بأمان.
             </p>
           </div>
@@ -225,6 +236,7 @@ export default async function AdminDashboardPage() {
                 budgets={agg.budgets}
                 models={agg.models}
                 statuses={agg.statuses}
+                locationSources={agg.locationSources}
               />
             </section>
 

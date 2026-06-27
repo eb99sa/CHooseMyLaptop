@@ -2,13 +2,11 @@
 
 import { UI } from "@/lib/i18n";
 
-type ExportType = "sessions" | "answers" | "listings" | "results";
+type ExportType = "sessions" | "listings";
 
 const EXPORTS: Array<{ type: ExportType; label: string }> = [
   { type: "sessions", label: "الجلسات" },
-  { type: "answers", label: "الإجابات" },
   { type: "listings", label: "الأجهزة" },
-  { type: "results", label: "التوصيات" },
 ];
 
 // Client component: triggers a CSV download per table via the export API.

@@ -30,6 +30,8 @@ interface ListingRow {
   currency: string;
   availability: string | null;
   url: string | null;
+  country: string | null;
+  city_or_area: string | null;
   specs_json: unknown;
   rating: number | string | null;
   review_count: number | null;
@@ -49,6 +51,8 @@ export function mapListingRow(row: ListingRow): LaptopListing {
     currency: row.currency ?? "KWD",
     availability: row.availability ?? "unknown",
     url: row.url,
+    country: row.country,
+    city_or_area: row.city_or_area,
     specs,
     rating: row.rating != null ? Number(row.rating) : null,
     review_count: row.review_count ?? null,
@@ -57,14 +61,30 @@ export function mapListingRow(row: ListingRow): LaptopListing {
   };
 }
 
-/** Fetch the full catalog, cheapest first. */
+interface FetchOpts {
+  /** Prefer listings in this country if any exist; otherwise return all. */
+  country?: string | null;
+}
+
+/** Fetch the catalog (cheapest first), optionally preferring a country. */
 export async function fetchAllListings(
   supabase: SupabaseClient,
+  opts: FetchOpts = {},
 ): Promise<LaptopListing[]> {
   const { data, error } = await supabase
     .from("laptop_listings")
     .select("*")
     .order("price", { ascending: true });
   if (error) throw new Error(`Failed to load listings: ${error.message}`);
-  return (data ?? []).map((r) => mapListingRow(r as ListingRow));
+
+  const all = (data ?? []).map((r) => mapListingRow(r as ListingRow));
+
+  const country = opts.country?.trim().toLowerCase();
+  if (country) {
+    const local = all.filter((l) => (l.country ?? "").trim().toLowerCase() === country);
+    // Only narrow to the country when we actually have local stock; otherwise
+    // fall back to the full catalog (the report labels results as estimated).
+    if (local.length > 0) return local;
+  }
+  return all;
 }

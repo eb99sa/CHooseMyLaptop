@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { Card, CardTitle, CardMuted } from "@/components/ui/Card";
-import { getCurrentUser } from "@/lib/supabase/server";
 import { APP_NAME, UI, USE_CASE_LABELS, USE_CASE_ORDER } from "@/lib/i18n";
 // Hero3D is a self-contained "use client" component. It mount-gates its WebGL
 // canvas so it never renders during SSR — safe to import directly from this
@@ -14,13 +13,11 @@ const STEPS = [
   { icon: "🎯", title: UI.step3Title, body: UI.step3Body },
 ];
 
-export default async function HomePage() {
-  const user = await getCurrentUser();
-  const ctaHref = user ? "/sessions/new" : "/login";
-
+// Anonymous landing page: no accounts, the CTA goes straight to a new session.
+export default function HomePage() {
   return (
     <div className="min-h-screen">
-      <SiteHeader email={user?.email} />
+      <SiteHeader />
 
       <main className="mx-auto max-w-6xl px-4">
         {/* Hero */}
@@ -32,13 +29,16 @@ export default async function HomePage() {
             <p className="mt-5 max-w-xl text-base leading-relaxed text-[var(--color-muted)] sm:text-lg">
               {UI.heroSubtitle}
             </p>
+            <p className="mt-3 text-sm font-medium text-[var(--color-brand-600)]">
+              {UI.noLoginNeeded}
+            </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href={ctaHref} className="btn btn-primary text-base">
+              <Link href="/sessions/new" className="btn btn-primary text-base">
                 {UI.ctaStart}
               </Link>
-              <Link href="#how-it-works" className="btn btn-ghost text-base">
+              <a href="#how-it-works" className="btn btn-ghost text-base">
                 {UI.howItWorks}
-              </Link>
+              </a>
             </div>
           </div>
 
@@ -90,9 +90,7 @@ export default async function HomePage() {
       <footer className="border-t border-[var(--color-line)] bg-[var(--color-surface)]">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-8 text-center sm:flex-row sm:justify-between sm:text-start">
           <p className="text-sm font-semibold text-[var(--color-ink)]">{APP_NAME}</p>
-          <p className="text-xs text-[var(--color-muted)]">
-            نسخة تجريبية (MVP) — بعض البيانات تقديرية. تأكّد من السعر والتوفر قبل الشراء.
-          </p>
+          <p className="text-xs text-[var(--color-muted)]">{UI.privacyNote}</p>
         </div>
       </footer>
     </div>

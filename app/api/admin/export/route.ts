@@ -1,32 +1,28 @@
-import { getCurrentUser } from "@/lib/supabase/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { isAdminEmail, toCsv } from "@/lib/utils";
+import { createServiceClient, isDbConfigured } from "@/lib/supabase/service";
+import { isAdminRequest } from "@/lib/admin-cookies";
+import { toCsv } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
-type ExportType = "sessions" | "answers" | "listings" | "results";
+type ExportType = "sessions" | "listings";
 
+// Anonymous sessions export intentionally omits the token hash and any exact
+// coordinates — only approximate area is stored, and we export that.
 const TABLES: Record<ExportType, { table: string; columns: string[]; order: string }> = {
   sessions: {
-    table: "recommendation_sessions",
+    table: "anonymous_recommendation_sessions",
     columns: [
       "id",
-      "user_id",
       "status",
       "primary_use_case",
       "budget_min",
       "budget_max",
       "currency",
       "country",
-      "city",
+      "city_or_area",
+      "location_source",
       "created_at",
-      "updated_at",
     ],
-    order: "created_at",
-  },
-  answers: {
-    table: "user_answers",
-    columns: ["id", "session_id", "question_key", "question_text", "answer_value", "answer_type", "created_at"],
     order: "created_at",
   },
   listings: {
@@ -40,6 +36,8 @@ const TABLES: Record<ExportType, { table: string; columns: string[]; order: stri
       "price",
       "currency",
       "availability",
+      "country",
+      "city_or_area",
       "rating",
       "review_count",
       "source_type",
@@ -50,29 +48,15 @@ const TABLES: Record<ExportType, { table: string; columns: string[]; order: stri
     ],
     order: "created_at",
   },
-  results: {
-    table: "recommendation_results",
-    columns: [
-      "id",
-      "session_id",
-      "laptop_listing_id",
-      "recommendation_type",
-      "fit_score",
-      "roi_score",
-      "final_score",
-      "reasoning",
-      "warnings_json",
-      "created_at",
-    ],
-    order: "created_at",
-  },
 };
 
-// GET /api/admin/export?type=sessions|answers|listings|results
+// GET /api/admin/export?type=sessions|listings (admin cookie required).
 export async function GET(req: Request) {
-  const user = await getCurrentUser();
-  if (!user || !isAdminEmail(user.email)) {
+  if (!(await isAdminRequest())) {
     return new Response("forbidden", { status: 403 });
+  }
+  if (!isDbConfigured()) {
+    return new Response("not_configured", { status: 503 });
   }
 
   const url = new URL(req.url);
@@ -83,7 +67,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const admin = createSupabaseAdminClient();
+    const admin = createServiceClient();
     const { data, error } = await admin
       .from(config.table)
       .select(config.columns.join(","))

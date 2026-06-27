@@ -23,6 +23,7 @@ interface ChartsProps {
   budgets: Datum[];
   models: Datum[];
   statuses: Datum[];
+  locationSources: Datum[];
 }
 
 const BRAND = "#4f46e5";
@@ -68,7 +69,7 @@ function renderPieLabel(props: { name?: string | number; value?: string | number
 }
 
 // Client component: admin analytics charts (RTL-aware).
-export function Charts({ useCases, budgets, models, statuses }: ChartsProps) {
+export function Charts({ useCases, budgets, models, statuses, locationSources }: ChartsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <ChartCard title="الاستخدامات الأكثر طلباً" empty={useCases.length === 0}>
@@ -129,6 +130,28 @@ export function Charts({ useCases, budgets, models, statuses }: ChartsProps) {
           <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(79,70,229,0.08)" }} />
           <Bar dataKey="value" fill="#22c55e" radius={[0, 6, 6, 0]} />
         </BarChart>
+      </ChartCard>
+
+      <ChartCard title="مصدر تحديد الموقع" empty={locationSources.length === 0}>
+        <PieChart>
+          <Tooltip contentStyle={tooltipStyle} />
+          <Pie
+            data={locationSources}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius={90}
+            innerRadius={48}
+            paddingAngle={2}
+            label={renderPieLabel}
+            labelLine={false}
+          >
+            {locationSources.map((_, i) => (
+              <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+            ))}
+          </Pie>
+        </PieChart>
       </ChartCard>
     </div>
   );

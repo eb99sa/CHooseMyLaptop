@@ -3,6 +3,7 @@ import type {
   BasicNeeds,
   ConditionPref,
   Importance,
+  LocationSource,
   ScreenSizePref,
   UseCase,
   Urgency,
@@ -25,6 +26,11 @@ const IMPORTANCE: Importance[] = ["very_important", "somewhat", "not_important"]
 const SCREEN: ScreenSizePref[] = ["small", "medium", "large", "no_pref"];
 const CONDITION: ConditionPref[] = ["new", "used", "either"];
 const URGENCY: Urgency[] = ["now", "soon", "can_wait"];
+const LOCATION_SOURCES: LocationSource[] = [
+  "browser_geolocation",
+  "manual_search",
+  "skipped",
+];
 const ANSWER_TYPES: AnswerType[] = [
   "text",
   "number",
@@ -59,12 +65,9 @@ export function normalizeBasicNeeds(input: unknown): BasicNeeds | null {
     budget_min,
     budget_max,
     currency: typeof b.currency === "string" && b.currency ? b.currency : "KWD",
-    country: typeof b.country === "string" ? b.country : "",
-    city: typeof b.city === "string" ? b.city : "",
-    preferred_language:
-      typeof b.preferred_language === "string" && b.preferred_language
-        ? b.preferred_language
-        : "ar",
+    country: typeof b.country === "string" ? b.country.slice(0, 80) : "",
+    city_or_area: typeof b.city_or_area === "string" ? b.city_or_area.slice(0, 120) : "",
+    location_source: pick(b.location_source, LOCATION_SOURCES, "skipped"),
     primary_use_case: b.primary_use_case as UseCase,
     portability: pick(b.portability, IMPORTANCE, "somewhat"),
     battery_importance: pick(b.battery_importance, IMPORTANCE, "somewhat"),

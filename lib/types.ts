@@ -26,16 +26,28 @@ export type ScreenSizePref = "small" | "medium" | "large" | "no_pref";
 export type ConditionPref = "new" | "used" | "either";
 export type Urgency = "now" | "soon" | "can_wait";
 
+// How the user's location was obtained (or that they skipped it).
+export type LocationSource = "browser_geolocation" | "manual_search" | "skipped";
+
+// Approximate location chosen on Page 1. We never persist exact coordinates;
+// they are used only transiently during the active request for reverse geocode.
+export interface LocationInfo {
+  country: string; // "" when skipped
+  city_or_area: string; // "" when skipped
+  currency: string;
+  source: LocationSource;
+}
+
 // ---------------------------------------------------------------------------
-// Page 1 — Basic structured needs
+// Page 1 — Basic structured needs (anonymous)
 // ---------------------------------------------------------------------------
 export interface BasicNeeds {
   budget_min: number;
   budget_max: number;
   currency: string; // e.g. "KWD"
-  country: string;
-  city: string;
-  preferred_language: string; // e.g. "ar"
+  country: string; // approximate, may be ""
+  city_or_area: string; // approximate, may be ""
+  location_source: LocationSource;
   primary_use_case: UseCase;
   portability: Importance;
   battery_importance: Importance;
@@ -154,6 +166,8 @@ export interface LaptopListing {
   currency: string;
   availability: string; // "in_stock" | "out_of_stock" | "preorder" | "unknown"
   url?: string | null;
+  country?: string | null;
+  city_or_area?: string | null;
   specs: LaptopSpecs; // parsed from specs_json
   rating?: number | null; // 0..5
   review_count?: number | null;
@@ -215,25 +229,28 @@ export interface FinalReport {
 // DB row shapes (snake_case, matching Supabase tables)
 // ---------------------------------------------------------------------------
 export type SessionStatus =
-  | "draft"
   | "questions_ready"
   | "answered"
   | "completed"
   | "failed";
 
-export interface RecommendationSessionRow {
+// anonymous_recommendation_sessions row. No user/account fields exist.
+export interface AnonymousSessionRow {
   id: string;
-  user_id: string;
+  session_token_hash: string;
   status: SessionStatus;
   budget_min: number | null;
   budget_max: number | null;
   currency: string | null;
   country: string | null;
-  city: string | null;
+  city_or_area: string | null;
+  location_source: LocationSource;
   primary_use_case: string | null;
   basic_needs_json: BasicNeeds | null;
-  spec_json: SpecRecommendation | null;
-  report_json: FinalReport | null;
+  answers_json: UserAnswer[] | null;
+  ai_followup_questions_json: AIQuestion[] | null;
+  recommended_specs_json: SpecRecommendation | null;
+  recommendation_result_json: FinalReport | null;
   created_at: string;
-  updated_at: string;
+  expires_at: string;
 }

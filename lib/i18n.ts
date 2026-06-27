@@ -102,19 +102,28 @@ export const UI = {
   step3Title: "٣) توصية واضحة",
   step3Body: "قائمة مرتّبة بأفضل الأجهزة، مع سبب كل ترشيح ونطاق السعر العادل.",
   ctaStart: "ابدأ توصيتك المجانية",
-  // auth
-  loginTitle: "تسجيل الدخول",
-  loginSubtitle: "أدخل بريدك الإلكتروني وسنرسل لك رابط دخول سحري.",
-  emailLabel: "البريد الإلكتروني",
-  sendMagicLink: "أرسل رابط الدخول",
-  magicLinkSent: "تم الإرسال! تفقّد بريدك واضغط على الرابط لتسجيل الدخول.",
-  authError: "انتهت صلاحية الرابط أو تم استخدامه. حاول تسجيل الدخول من جديد.",
-  signOut: "تسجيل الخروج",
-  // dashboard
-  dashboardTitle: "لوحتي",
+  noLoginNeeded: "بدون تسجيل دخول — أداة مجهولة وسريعة.",
   newSession: "توصية جديدة",
-  mySessions: "توصياتي السابقة",
-  noSessions: "لا توجد توصيات بعد. ابدأ توصيتك الأولى.",
+  // privacy
+  privacyNote:
+    "أداة مجهولة بدون حساب — لا نحفظ هويتك ولا موقعك الدقيق. نستخدم منطقتك فقط لتحسين الترشيحات المحلية.",
+  // location
+  locationTitle: "موقعك (اختياري)",
+  locationHelp:
+    "استخدم منطقتك الحالية لإيجاد متاجر قريبة وأسعار محلية. يمكنك أيضاً اختيار منطقة أخرى يدوياً.",
+  useMyLocation: "استخدم موقعي الحالي",
+  chooseAnotherArea: "اختر منطقة أخرى",
+  skipLocation: "تخطّي تحديد الموقع",
+  locating: "جارٍ تحديد موقعك...",
+  detectedArea: "المنطقة المكتشفة",
+  changeLocation: "غير المنطقة",
+  searchCityArea: "ابحث عن مدينة أو منطقة",
+  locationDenied:
+    "تعذّر الوصول إلى الموقع. اكتب منطقتك يدوياً أو تابع بدون موقع.",
+  locationUnavailable: "خدمة الموقع غير متاحة في متصفحك. اكتب منطقتك يدوياً.",
+  locationTimeout: "استغرق تحديد الموقع وقتاً طويلاً. اكتب منطقتك يدوياً.",
+  continueWithoutLocation: "متابعة بدون موقع",
+  nearbyNeedsLocation: "اقتراح المتاجر القريبة يحتاج إلى تحديد موقعك.",
   // form
   basicNeedsTitle: "احتياجاتك الأساسية",
   basicNeedsSubtitle: "خطوة ١ من ٢ — معلومات سريعة عنك وعن استخدامك.",
@@ -143,9 +152,18 @@ export const UI = {
   estimatedNote:
     "بعض البيانات تقديرية وليست أسعاراً مباشرة من المتاجر. تأكّد من السعر والتوفر قبل الشراء.",
   compare: "قارن الأجهزة",
+  sessionExpired: "انتهت صلاحية هذه الجلسة أو لم نجدها. ابدأ توصية جديدة.",
   // admin
   adminTitle: "لوحة الإدارة",
   exportCsv: "تصدير CSV",
+  adminLoginTitle: "دخول الإدارة",
+  adminLoginSubtitle: "هذه الصفحة مخصّصة للمشرف فقط.",
+  adminPasswordLabel: "كلمة مرور الإدارة",
+  adminLoginBtn: "دخول",
+  adminLoginError: "كلمة المرور غير صحيحة.",
+  adminNotConfigured:
+    "لم يتم إعداد دخول الإدارة. عيّن ADMIN_PASSWORD و ADMIN_SESSION_SECRET في متغيرات البيئة.",
+  adminSignOut: "خروج الإدارة",
 } as const;
 
 export const USE_CASE_ORDER: UseCase[] = [
