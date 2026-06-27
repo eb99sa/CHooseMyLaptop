@@ -176,7 +176,7 @@ create index if not exists idx_events_created on public.admin_analytics_events (
 -- updated_at trigger for sessions
 -- ---------------------------------------------------------------------------
 create or replace function public.set_updated_at()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql set search_path = '' as $$
 begin
   new.updated_at = now();
   return new;
@@ -203,3 +203,7 @@ drop trigger if exists trg_on_auth_user_created on auth.users;
 create trigger trg_on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- handle_new_user is trigger-only: don't expose it as a public REST RPC.
+-- (The trigger still fires after these revokes — triggers bypass EXECUTE checks.)
+revoke execute on function public.handle_new_user() from public, anon, authenticated;

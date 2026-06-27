@@ -31,11 +31,28 @@ export async function createSupabaseServerClient() {
   );
 }
 
+/** True when the Supabase environment variables are present. */
+export function isSupabaseConfigured(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  );
+}
+
 /** Convenience: return the current authenticated user (or null). */
 export async function getCurrentUser() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  // If the backend isn't configured yet, treat the visitor as logged out
+  // instead of crashing public pages (e.g. the landing page).
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user;
+  } catch {
+    return null;
+  }
 }

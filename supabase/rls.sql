@@ -49,6 +49,10 @@ returns boolean language sql stable security definer set search_path = public as
     where s.id = sid and s.user_id = auth.uid()
   );
 $$;
+-- Used inside RLS policies, so authenticated users need EXECUTE, but it should
+-- not be exposed to anon as a public REST RPC.
+revoke execute on function public.owns_session(uuid) from public, anon;
+grant execute on function public.owns_session(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- user_answers — scoped to owned session
