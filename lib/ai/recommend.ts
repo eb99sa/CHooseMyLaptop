@@ -99,7 +99,8 @@ async function getSpecRecommendation(
       source: "ai",
     };
     return merged;
-  } catch {
+  } catch (err) {
+    console.warn("[ai] spec recommendation fell back to deterministic:", (err as Error).message);
     return fallback;
   }
 }
@@ -162,8 +163,8 @@ async function getNarrative(
       if (data.narrative && data.narrative.trim()) {
         return { narrative: data.narrative.trim(), fromAi: true };
       }
-    } catch {
-      // fall through
+    } catch (err) {
+      console.warn("[ai] narrative fell back to template:", (err as Error).message);
     }
   }
   return { narrative: fallbackNarrative({ ...report, source: spec.source }), fromAi: false };

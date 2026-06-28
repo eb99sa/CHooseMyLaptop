@@ -75,7 +75,8 @@ export async function generateFollowUpQuestions(
       });
       const questions = normalize(data.questions ?? [], basic.primary_use_case);
       return { questions, source: "ai" };
-    } catch {
+    } catch (err) {
+      console.warn("[ai] follow-up questions fell back to deterministic:", (err as Error).message);
       // fall through to deterministic questions
     }
   }

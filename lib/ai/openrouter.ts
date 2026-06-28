@@ -30,7 +30,7 @@ async function chat({ system, user, temperature = 0.4, maxTokens = 2000 }: ChatO
     throw new OpenRouterUnavailable("OPENROUTER_API_KEY is not set");
   }
 
-  const model = process.env.OPENROUTER_MODEL || "anthropic/claude-3.5-sonnet";
+  const model = process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
 
   let res: Response;
   try {
