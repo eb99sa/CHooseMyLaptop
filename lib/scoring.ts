@@ -17,6 +17,7 @@ import type {
   SpecTarget,
 } from "@/lib/types";
 import { clamp, round } from "@/lib/utils";
+import { USE_CASE_LABELS } from "@/lib/i18n";
 
 // ---------------------------------------------------------------------------
 // Deterministic, inspectable scoring. The AI proposes spec TARGETS; this file
@@ -359,7 +360,7 @@ export function fallbackSpecRecommendation(basic: BasicNeeds): SpecRecommendatio
   };
 
   return {
-    need_summary: `بناءً على إجاباتك، تحتاج جهازاً لـ"${basic.primary_use_case}" يوازن بين الأداء والسعر وخفة الحمل ضمن ميزانية ${basic.budget_min}–${basic.budget_max} ${basic.currency}.`,
+    need_summary: `بناءً على إجاباتك، تحتاج جهازاً لـ${USE_CASE_LABELS[basic.primary_use_case] ?? basic.primary_use_case} يوازن بين الأداء والسعر وخفة الحمل ضمن ميزانية ${basic.budget_min}–${basic.budget_max} ${basic.currency}.`,
     spec_range: { minimum, ideal, unnecessary: baseline.unnecessary },
     price_range,
     confidence: "medium",
