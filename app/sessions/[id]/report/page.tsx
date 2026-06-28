@@ -4,10 +4,14 @@ import { getSessionForViewer } from "@/lib/services/sessions";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { Card, CardTitle, CardMuted } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Icon } from "@/components/ui/Icon";
+import { PriceTag } from "@/components/ui/PriceTag";
+import { StateView } from "@/components/ui/StateView";
 import { LaptopCard } from "@/components/report/LaptopCard";
 import { SpecBlock } from "@/components/report/SpecBlock";
+import { ExplainPanel } from "@/components/report/ExplainPanel";
 import { RECOMMENDATION_TYPE_LABELS, UI } from "@/lib/i18n";
-import { formatPrice, safeJsonParse } from "@/lib/utils";
+import { safeJsonParse } from "@/lib/utils";
 import type { FinalReport } from "@/lib/types";
 
 interface PageProps {
@@ -94,59 +98,65 @@ export default async function ReportPage({ params }: PageProps) {
               />
             </div>
             {spec.spec_range.unnecessary.length > 0 && (
-              <div className="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-canvas)] p-4">
-                <p className="mb-2 text-sm font-bold text-[var(--color-ink)]">
-                  {UI.unnecessarySpecs}
-                </p>
-                <ul className="space-y-1">
-                  {spec.spec_range.unnecessary.map((item, i) => (
-                    <li
-                      key={i}
-                      className="flex gap-2 text-sm text-[var(--color-muted)]"
-                    >
-                      <span className="mt-0.5 shrink-0 text-[var(--color-success)]" aria-hidden>
-                        ✓
-                      </span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <ExplainPanel
+                title={UI.unnecessarySpecs}
+                items={spec.spec_range.unnecessary}
+              />
             )}
           </Card>
 
           {/* 3) Price range */}
           <Card className="space-y-4">
             <CardTitle>{UI.priceRange}</CardTitle>
-            <div className="flex flex-wrap items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-[var(--color-brand-700)]">
-                {formatPrice(spec.price_range.fair_min, spec.price_range.currency)}
-              </span>
-              <span className="text-[var(--color-muted)]">—</span>
-              <span className="text-2xl font-extrabold text-[var(--color-brand-700)]">
-                {formatPrice(spec.price_range.fair_max, spec.price_range.currency)}
-              </span>
-            </div>
+            <PriceTag
+              price={spec.price_range.fair_min}
+              max={spec.price_range.fair_max}
+              currency={spec.price_range.currency}
+            />
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-[var(--color-line)] p-3">
+              <div className="rounded-[var(--radius-md)] border border-[var(--color-line)] p-3">
                 <p className="text-xs text-[var(--color-muted)]">
                   أقل من هذا السعر مريب (قد يكون قديماً أو غير أصلي)
                 </p>
-                <p className="mt-1 font-bold text-[var(--color-ink)]">
-                  {formatPrice(spec.price_range.too_low, spec.price_range.currency)}
+                <p className="mt-1.5">
+                  <PriceTag
+                    price={spec.price_range.too_low}
+                    currency={spec.price_range.currency}
+                    size="sm"
+                  />
                 </p>
               </div>
-              <div className="rounded-xl border border-[var(--color-line)] p-3">
+              <div className="rounded-[var(--radius-md)] border border-[var(--color-line)] p-3">
                 <p className="text-xs text-[var(--color-muted)]">
                   أعلى من هذا السعر مبالغ فيه لاحتياجك
                 </p>
-                <p className="mt-1 font-bold text-[var(--color-ink)]">
-                  {formatPrice(spec.price_range.overpriced, spec.price_range.currency)}
+                <p className="mt-1.5">
+                  <PriceTag
+                    price={spec.price_range.overpriced}
+                    currency={spec.price_range.currency}
+                    size="sm"
+                  />
                 </p>
               </div>
             </div>
             <CardMuted>{spec.price_range.explanation}</CardMuted>
           </Card>
+
+          {/* No-match — honest empty state */}
+          {scored.length === 0 && (
+            <Card>
+              <StateView
+                icon="inbox"
+                title="ما لقينا جهاز يطابق تمامًا"
+                body="ما توفّر لنا جهاز يطابق مواصفاتك وميزانيتك في الكتالوج الحالي. جرّب ترفع الميزانية شوي أو تغيّر الأولوية وبنلقّى لك خيار أوضح."
+              >
+                <Link href="/sessions/new" className="btn btn-primary">
+                  <Icon name="refresh" size={16} />
+                  عدّل إجاباتك
+                </Link>
+              </StateView>
+            </Card>
+          )}
 
           {/* 4) Final recommendation — curated picks */}
           {(picks.length > 0 || report.avoid) && (
@@ -169,7 +179,7 @@ export default async function ReportPage({ params }: PageProps) {
                 ))}
               </div>
               {report.avoid && (
-                <div className="rounded-[var(--radius-card)] border border-[rgba(255,111,111,0.35)] bg-[rgba(255,111,111,0.08)] p-4">
+                <div className="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--tint-danger)] p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <Badge tone="danger">{RECOMMENDATION_TYPE_LABELS.avoid}</Badge>
                   </div>
