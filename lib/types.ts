@@ -188,8 +188,6 @@ export interface ScoreBreakdown {
   upgradeability: number;
   local_availability: number;
   // --- Additive (rubric v2). Optional so older persisted reports stay valid. ---
-  // Transparent split of price_performance for UI drill-down.
-  price_sub?: { price_position: number; compute_value: number };
   // Per-dimension data confidence in 0.5..1.0 (1.0 = fully known).
   dim_confidence?: Partial<Record<RubricDimension, number>>;
 }

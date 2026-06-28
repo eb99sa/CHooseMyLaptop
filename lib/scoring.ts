@@ -76,7 +76,6 @@ export function scoreLaptop(
     display_comfort: disp.score,
     upgradeability: upg.score,
     local_availability: avail.score,
-    price_sub: pp.price_sub,
     dim_confidence: confByDim,
   };
 

@@ -3,13 +3,17 @@
 //
 // The AI proposes spec TARGETS; this file turns targets + a catalog listing into
 // transparent 0..100 sub-scores. Design goals over v1:
-//   1. MECE dimensions — each spec field is read by exactly one dimension
-//      (display lives only in display_comfort; compute only in use_case_fit).
+//   1. MECE dimensions — each spec field feeds exactly one weighted dimension:
+//      compute (cpu/ram/gpu/storage) -> use_case_fit, display -> display_comfort,
+//      price -> price_performance, battery/weight -> battery_portability,
+//      build/rating/age -> build_reliability, upgrade flags -> upgradeability,
+//      stock/url/freshness -> local_availability. No field is double-counted.
 //   2. Per-use-case weights — final_score weighting is a function of UseCase.
 //   3. Data honesty — every sub-engine returns a confidence; unknown/inferred
-//      data lowers confidence (surfaced separately) but never inflates a score.
-//   4. roi_score is a pure price-anchored value signal that shares no weighted
-//      ingredient with final_score, so best_value differs from best_overall.
+//      data lowers confidence (surfaced separately) and never inflates a score.
+//   4. roi_score is a price-DOMINANT value signal, gated by adequacy
+//      (use_case_fit), so it correlates with final_score but ranks differently —
+//      best_value is not a clone of best_overall. (It is NOT independent of it.)
 //
 // scoring.ts orchestrates these into a ScoredLaptop. Keep this file framework-
 // free and deterministic.
@@ -174,18 +178,18 @@ export function scoreUseCaseFit(
   return { score, confidence };
 }
 
-export interface PricePerfResult extends DimensionResult {
-  price_sub: { price_position: number; compute_value: number };
-}
-
-/** Value for money: where the price sits in the fair band + absolute compute density. */
+/**
+ * Value sanity: purely where the listing's price sits within the AI's fair band.
+ * MECE — reads ONLY price. Compute strength is owned by use_case_fit and is
+ * deliberately not re-read here, so final_score never double-counts raw power
+ * (which would also reward overkill, against the "right specs, fair price, not
+ * more" ethos). The price/value trade-off lives in roi_score instead.
+ */
 export function scorePricePerformance(
   listing: LaptopListing,
   priceRange: PriceRange,
-): PricePerfResult {
-  const s = listing.specs;
+): DimensionResult {
   const p = listing.price;
-
   const price_position =
     p < priceRange.too_low
       ? 40
@@ -196,26 +200,8 @@ export function scorePricePerformance(
           : p <= priceRange.overpriced
             ? 60
             : 25;
-
-  // Absolute (cohort-independent) performance density — stays stable as the
-  // catalog grows (no min-max normalization across listings).
-  const perf = clamp(
-    s.cpu_tier * 7 +
-      s.gpu_tier * 3 +
-      (Math.min(s.ram_gb, 32) / 32) * 18 +
-      (s.storage_type === "SSD" ? 9 : 0),
-    0,
-    100,
-  );
-  const compute_value = clamp(40 + (perf - 50) * 1.2, 0, 100);
-
-  const score = round(price_position * 0.6 + compute_value * 0.4);
-  const confidence = s.cpu_tier <= 0 ? CONFIDENCE.COMPUTE_CORE_MISSING : CONFIDENCE.FULL;
-  return {
-    score,
-    confidence,
-    price_sub: { price_position: round(price_position), compute_value: round(compute_value) },
-  };
+  // Price is always known, so this dimension is full confidence.
+  return { score: round(price_position), confidence: CONFIDENCE.FULL };
 }
 
 /** Longevity/trust: explicit build_quality or brand prior, blended with rating, minus age. */
@@ -254,11 +240,16 @@ export function scoreBatteryPortability(
     spec.spec_range.minimum.battery_hours_min || SCORING_THRESHOLDS.DEFAULT_BATTERY_TARGET;
   const targetWeight =
     spec.spec_range.ideal.weight_kg_max || SCORING_THRESHOLDS.DEFAULT_WEIGHT_TARGET;
-  const battery = bandScore(s.battery_hours, targetBattery, targetBattery + 4);
+  // Missing data (<= 0) must never score perfectly — use a neutral mid value and
+  // let confidence (below) carry the uncertainty.
+  const battery =
+    s.battery_hours > 0 ? bandScore(s.battery_hours, targetBattery, targetBattery + 4) : 50;
   const weight =
-    s.weight_kg <= targetWeight
-      ? 100
-      : clamp(100 - (s.weight_kg - targetWeight) * 60, 0, 100);
+    s.weight_kg <= 0
+      ? 50
+      : s.weight_kg <= targetWeight
+        ? 100
+        : clamp(100 - (s.weight_kg - targetWeight) * 60, 0, 100);
 
   const bW = importanceWeight(basic.battery_importance);
   const pW = importanceWeight(basic.portability);
@@ -281,25 +272,29 @@ export function scoreDisplayComfort(
   basic: BasicNeeds,
   useCase: UseCase,
 ): DimensionResult {
-  let size = 100;
   const inch = s.display_inch;
-  switch (basic.screen_size_pref) {
-    case "small":
-      size = inch <= 14 ? 100 : inch <= 15.6 ? 70 : 45;
-      break;
-    case "medium":
-      size = inch >= 15 && inch <= 15.6 ? 100 : inch >= 14 && inch < 17 ? 80 : 55;
-      break;
-    case "large":
-      size = inch >= 16 ? 100 : inch >= 15 ? 75 : 45;
-      break;
-    default:
-      size = 90;
+  let size: number;
+  if (inch <= 0) {
+    size = 60; // unknown screen size — neutral, never ideal
+  } else {
+    switch (basic.screen_size_pref) {
+      case "small":
+        size = inch <= 14 ? 100 : inch <= 15.6 ? 70 : 45;
+        break;
+      case "medium":
+        size = inch >= 15 && inch <= 15.6 ? 100 : inch >= 14 && inch < 17 ? 80 : 55;
+        break;
+      case "large":
+        size = inch >= 16 ? 100 : inch >= 15 ? 75 : 45;
+        break;
+      default:
+        size = 90;
+    }
   }
 
   const width = resolutionWidth(s.display_resolution);
   const resScore = width >= 2560 ? 100 : width >= 1920 ? 90 : width >= 1600 ? 72 : 48;
-  const panel = s.display_panel.toUpperCase();
+  const panel = (s.display_panel || "").toUpperCase();
   const panelScore =
     panel === "OLED" ? 100 : panel === "IPS" ? 90 : panel === "VA" ? 74 : panel === "TN" ? 50 : 65;
 
@@ -311,7 +306,7 @@ export function scoreDisplayComfort(
 
   const panelKnown = !!panel && panel !== "UNKNOWN";
   let confidence: number =
-    panelKnown && resolutionKnown(s.display_resolution)
+    panelKnown && resolutionKnown(s.display_resolution) && inch > 0
       ? CONFIDENCE.FULL
       : CONFIDENCE.DISPLAY_DEGRADED;
   if (isGaming && s.display_refresh_hz == null) {
@@ -348,7 +343,7 @@ export function scoreLocalAvailability(listing: LaptopListing): DimensionResult 
         ? 70
         : a.includes("out") || a.includes("نفد")
           ? 20
-          : 55;
+          : 45; // unknown — clearly below preorder/in_stock, above out_of_stock
   const urlBonus = listing.url ? 5 : 0;
 
   const checked = listing.last_checked_at ? Date.parse(listing.last_checked_at) : NaN;
@@ -373,9 +368,10 @@ export function scoreLocalAvailability(listing: LaptopListing): DimensionResult 
 }
 
 // ---------------------------------------------------------------------------
-// roi_score — a pure price-anchored value signal, intentionally distinct from
-// final_score so best_value isn't a clone of best_overall. Price-dominant, but
-// modulated by adequacy so a junk-cheap machine can't read as "high value".
+// roi_score — a price-DOMINANT value signal: how favorably the price sits vs the
+// fair band, gated by adequacy (use_case_fit) so a junk-cheap machine can't read
+// as "high value". It correlates with final_score but ranks differently, so
+// best_value isn't a clone of best_overall (it is NOT independent of final_score).
 // ---------------------------------------------------------------------------
 export function priceAnchorRoi(
   listing: LaptopListing,
