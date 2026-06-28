@@ -1,4 +1,4 @@
-import type { GpuClass, SpecTarget, UseCase } from "@/lib/types";
+import type { GpuClass, RubricWeights, SpecTarget, UseCase } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Scoring rubric weights (must sum to 1.0). See README "Scoring" section.
@@ -22,6 +22,82 @@ export const GPU_CLASS_MIN_TIER: Record<GpuClass, number> = {
   mid_dedicated: 6,
   high_dedicated: 8,
 };
+
+// ---------------------------------------------------------------------------
+// Rubric v2 — per-use-case weight profiles. The default RUBRIC_WEIGHTS above is
+// the fallback; these tune the seven dimensions to what each buyer actually
+// cares about (rows sum to 1.0; resolveWeights() re-normalizes to guard drift).
+// ---------------------------------------------------------------------------
+export const USE_CASE_WEIGHTS = {
+  // Teachers move between classrooms: battery + portability matter, GPU doesn't.
+  teaching: { use_case_fit: 0.26, price_performance: 0.22, build_reliability: 0.13, battery_portability: 0.19, display_comfort: 0.1, upgradeability: 0.05, local_availability: 0.05 },
+  // Students want a balanced machine that lasts; value leads.
+  university: { use_case_fit: 0.28, price_performance: 0.24, build_reliability: 0.13, battery_portability: 0.15, display_comfort: 0.1, upgradeability: 0.05, local_availability: 0.05 },
+  // Office/browsing: battery + durability for long workdays; no dedicated GPU.
+  office: { use_case_fit: 0.27, price_performance: 0.23, build_reliability: 0.14, battery_portability: 0.17, display_comfort: 0.09, upgradeability: 0.05, local_availability: 0.05 },
+  // Coders need CPU/RAM above all, a little upgrade headroom, decent battery.
+  programming: { use_case_fit: 0.33, price_performance: 0.22, build_reliability: 0.13, battery_portability: 0.13, display_comfort: 0.08, upgradeability: 0.06, local_availability: 0.05 },
+  // Designers lean on color/display and a GPU; battery less so (near power).
+  design: { use_case_fit: 0.29, price_performance: 0.2, build_reliability: 0.13, battery_portability: 0.08, display_comfort: 0.19, upgradeability: 0.06, local_availability: 0.05 },
+  // CAD/simulation: strong compute + upgrade headroom for longevity.
+  engineering: { use_case_fit: 0.31, price_performance: 0.21, build_reliability: 0.13, battery_portability: 0.08, display_comfort: 0.12, upgradeability: 0.1, local_availability: 0.05 },
+  // Gaming = GPU + high-refresh display; battery nearly irrelevant (plugged in).
+  gaming: { use_case_fit: 0.32, price_performance: 0.2, build_reliability: 0.12, battery_portability: 0.05, display_comfort: 0.2, upgradeability: 0.06, local_availability: 0.05 },
+  // 4K editing: compute + color-accurate display + upgrade headroom.
+  video_editing: { use_case_fit: 0.3, price_performance: 0.2, build_reliability: 0.12, battery_portability: 0.06, display_comfort: 0.19, upgradeability: 0.08, local_availability: 0.05 },
+  // Business travellers: battery + weight + durability are paramount.
+  business: { use_case_fit: 0.25, price_performance: 0.22, build_reliability: 0.16, battery_portability: 0.2, display_comfort: 0.07, upgradeability: 0.05, local_availability: 0.05 },
+  // Family use = best value with durability; no pro specs needed.
+  family: { use_case_fit: 0.25, price_performance: 0.27, build_reliability: 0.15, battery_portability: 0.13, display_comfort: 0.1, upgradeability: 0.05, local_availability: 0.05 },
+} satisfies Record<UseCase, RubricWeights>;
+
+// Use cases where raw GPU weighs more inside the compute (use_case_fit) score.
+export const COMPUTE_GPU_HEAVY: Set<UseCase> = new Set([
+  "gaming",
+  "design",
+  "engineering",
+  "video_editing",
+]);
+
+// ---------------------------------------------------------------------------
+// Centralized scoring thresholds (formerly scattered magic numbers).
+// ---------------------------------------------------------------------------
+export const SCORING_THRESHOLDS = {
+  MAX_AGE_PENALTY: 30,
+  AGE_PENALTY_PER_YEAR: 6,
+  DEFAULT_BATTERY_TARGET: 6, // hours, when the spec target is unset
+  DEFAULT_WEIGHT_TARGET: 1.8, // kg, when the spec target is unset
+  UPGRADEABLE_UNKNOWN: 60, // neutral score for unknown upgradeability
+  MAX_FRESHNESS_PENALTY: 15, // cap on the stale-listing availability penalty
+  FRESHNESS_GRACE_DAYS: 7, // listings checked within N days aren't penalized
+  FRESHNESS_PENALTY_PER_DAY: 1.5,
+  SUSPICIOUS_CHEAP_ROI_CAP: 60, // a below-too_low price isn't "high value"
+  BEST_VALUE_MIN_FINAL: 55, // best_value pick must clear this final_score
+} as const;
+
+// ---------------------------------------------------------------------------
+// Per-dimension data-confidence levels (0.5..1.0). Confidence NEVER inflates a
+// score — it only feeds the honest data_confidence signal and يحتاج تحقق notes.
+// ---------------------------------------------------------------------------
+export const CONFIDENCE = {
+  FULL: 1.0,
+  COMPUTE_CORE_MISSING: 0.6, // cpu_tier/ram zeroed out
+  BUILD_ONE_MISSING: 0.8, // only build_quality OR rating present
+  BUILD_BRAND_PRIOR: 0.6, // neither present — pure brand prior
+  BATTERY_ONE_MISSING: 0.7,
+  BATTERY_BOTH_MISSING: 0.5,
+  DISPLAY_DEGRADED: 0.8, // panel unknown or resolution fell back
+  GAMING_REFRESH_UNKNOWN: 0.85, // gaming + no display_refresh_hz
+  UPGRADE_ONE_NULL: 0.75,
+  UPGRADE_BOTH_NULL: 0.5,
+  AVAIL_STALE: 0.8, // last_checked_at older than the grace window
+  AVAIL_UNKNOWN: 0.6, // missing timestamp or 'unknown' availability
+  // data_confidence (0..100) disclosure thresholds:
+  REASON_HIGH: 90, // >= -> positive "data complete" reason
+  WARN_LOW: 70, // < -> soft warning
+  WARN_VERYLOW: 50, // < -> stronger warning
+  LOW_DIM: 0.8, // a dim below this is listed in low_confidence_dims
+} as const;
 
 // Rough brand reliability proxy (1..10). Used only as a tie-breaker / prior
 // when a listing has no explicit build_quality. Intentionally conservative.
