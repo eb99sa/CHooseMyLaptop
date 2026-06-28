@@ -1,8 +1,11 @@
 import type { ScoredLaptop } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
-import { ScoreBar } from "@/components/ui/ScoreBar";
-import { UI } from "@/lib/i18n";
-import { cn, formatPrice } from "@/lib/utils";
+import { FitScore } from "@/components/ui/FitScore";
+import { PriceTag } from "@/components/ui/PriceTag";
+import { Icon } from "@/components/ui/Icon";
+import { SpecSignal } from "@/components/report/SpecSignal";
+import { TrustBadge } from "@/components/report/TrustBadge";
+import { cn } from "@/lib/utils";
 
 interface LaptopCardProps {
   scored: ScoredLaptop;
@@ -10,98 +13,89 @@ interface LaptopCardProps {
   badgeLabel?: string;
 }
 
-// Server, presentational. Renders one scored laptop with specs, scores, and notes.
+// A decision report, not a marketing card: rank, fit dial, KWD price, the
+// signals that matter, and an honest why / where-it-may-not-fit.
 export function LaptopCard({ scored, highlight = false, badgeLabel }: LaptopCardProps) {
-  const { listing, fit_score, roi_score, final_score, reasons, warnings } = scored;
+  const { listing, final_score, roi_score, reasons, warnings } = scored;
   const s = listing.specs;
-
-  // Compact, Arabic-friendly key-specs line.
-  const specBits = [
-    s.cpu,
-    `${s.ram_gb} GB رام`,
-    `${s.storage_gb} GB ${s.storage_type}`,
-    `شاشة ${s.display_inch} بوصة`,
-    s.gpu,
-    `${s.battery_hours} ساعات بطارية`,
-    `${s.weight_kg} كجم`,
-  ].filter(Boolean);
 
   return (
     <article
       className={cn(
         "card flex h-full flex-col gap-4 p-5",
-        highlight && "border-[var(--color-brand-300)] shadow-[var(--shadow-lift)]",
+        highlight && "shadow-[var(--shadow-lift)] ring-1 ring-[var(--color-line-strong)]",
       )}
     >
-      <header className="space-y-2">
-        {badgeLabel && (
-          <Badge tone="brand" className="mb-1">
-            {badgeLabel}
-          </Badge>
-        )}
-        <h3 className="text-base font-bold leading-snug text-[var(--color-ink)]">
-          {listing.product_title}
-        </h3>
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--color-muted)]">
-          {listing.brand && <span>{listing.brand}</span>}
-          {listing.store_name && (
-            <>
-              <span aria-hidden>•</span>
-              <span>{listing.store_name}</span>
-            </>
+      <header className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1.5">
+          {badgeLabel && (
+            <Badge tone={highlight ? "signal" : "neutral"} className="mb-1">
+              {badgeLabel}
+            </Badge>
           )}
+          <h3 className="text-base font-bold leading-snug text-[var(--color-ink)]">
+            {listing.product_title}
+          </h3>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--color-muted)]">
+            {listing.brand && <span dir="auto">{listing.brand}</span>}
+            {listing.store_name && (
+              <>
+                <span aria-hidden>•</span>
+                <span dir="auto">{listing.store_name}</span>
+              </>
+            )}
+          </div>
+          <div className="pt-1">
+            <PriceTag price={listing.price} currency={listing.currency} />
+          </div>
         </div>
-        <p className="text-lg font-extrabold text-[var(--color-brand-700)]">
-          {formatPrice(listing.price, listing.currency)}
-        </p>
+        <FitScore value={final_score} size={72} />
       </header>
 
-      <p className="text-sm leading-relaxed text-[var(--color-muted)]">
-        {specBits.join(" · ")}
-      </p>
-
-      <div className="space-y-2">
-        <ScoreBar label={UI.finalScore} value={final_score} />
-        <div className="flex gap-2">
-          <span className="chip bg-slate-100 text-slate-600">
-            {UI.fitScore}: <b className="tabular-nums">{Math.round(fit_score)}</b>
-          </span>
-          <span className="chip bg-slate-100 text-slate-600">
-            {UI.roiScore}: <b className="tabular-nums">{Math.round(roi_score)}</b>
-          </span>
-        </div>
+      <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2">
+        <SpecSignal icon="cpu" code="CPU" value={s.cpu} />
+        <SpecSignal icon="ram" code="RAM" value={`${s.ram_gb} GB`} />
+        <SpecSignal icon="ssd" code={s.storage_type} value={`${s.storage_gb} GB`} />
+        <SpecSignal icon="gpu" code="GPU" value={s.gpu} />
       </div>
 
-      {reasons.length > 0 && (
-        <div>
-          <p className="mb-1 text-sm font-bold text-[var(--color-ink)]">{UI.pros}</p>
-          <ul className="space-y-1">
-            {reasons.map((r, i) => (
-              <li key={i} className="flex gap-2 text-sm text-[var(--color-muted)]">
-                <span className="mt-0.5 shrink-0 text-[var(--color-success)]" aria-hidden>
-                  ✓
-                </span>
-                <span>{r}</span>
-              </li>
-            ))}
-          </ul>
+      {highlight && (
+        <div className="flex flex-wrap gap-2">
+          {listing.store_name && <TrustBadge icon="store" label={listing.store_name} />}
+          {roi_score >= 70 && <TrustBadge icon="value" label="قيمة عالية" verified />}
         </div>
+      )}
+
+      {reasons.length > 0 && (
+        <ul className="flex flex-col gap-2">
+          {reasons.slice(0, 3).map((r, i) => (
+            <li
+              key={i}
+              className="flex gap-2 text-sm leading-relaxed text-[var(--color-muted)]"
+            >
+              <span className="mt-0.5 shrink-0 text-[var(--color-success)]">
+                <Icon name="check" size={16} />
+              </span>
+              <span>{r}</span>
+            </li>
+          ))}
+        </ul>
       )}
 
       {warnings.length > 0 && (
-        <div>
-          <p className="mb-1 text-sm font-bold text-[var(--color-ink)]">{UI.warnings}</p>
-          <ul className="space-y-1">
-            {warnings.map((w, i) => (
-              <li key={i} className="flex gap-2 text-sm text-amber-700">
-                <span className="mt-0.5 shrink-0" aria-hidden>
-                  !
-                </span>
-                <span>{w}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ul className="flex flex-col gap-2">
+          {warnings.slice(0, 3).map((w, i) => (
+            <li
+              key={i}
+              className="flex gap-2 text-sm leading-relaxed text-[var(--color-warning)]"
+            >
+              <span className="mt-0.5 shrink-0">
+                <Icon name="alert" size={16} />
+              </span>
+              <span>{w}</span>
+            </li>
+          ))}
+        </ul>
       )}
 
       {listing.url && (
@@ -111,6 +105,7 @@ export function LaptopCard({ scored, highlight = false, badgeLabel }: LaptopCard
           rel="noopener noreferrer"
           className="btn btn-ghost mt-auto text-sm"
         >
+          <Icon name="store" size={16} />
           الذهاب للمتجر
         </a>
       )}

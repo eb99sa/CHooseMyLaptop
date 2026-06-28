@@ -26,13 +26,13 @@ interface ChartsProps {
   locationSources: Datum[];
 }
 
-const BRAND = "#4f46e5";
-const PALETTE = ["#4f46e5", "#0ea5e9", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#14b8a6", "#ec4899"];
+const BRAND = "#2bd693";
+const PALETTE = ["#2bd693", "#5eead4", "#46e2a0", "#f4c560", "#ff6f6f", "#7dd3fc", "#a3e635", "#c4b5fd"];
 
 const AXIS_STYLE = { fontSize: 12, fill: "var(--color-muted)" } as const;
 const tooltipStyle = {
-  background: "var(--color-surface)",
-  border: "1px solid var(--color-line)",
+  background: "var(--color-surface-solid)",
+  border: "1px solid var(--color-line-strong)",
   borderRadius: 10,
   fontSize: 13,
   color: "var(--color-ink)",
@@ -76,7 +76,7 @@ export function Charts({ useCases, budgets, models, statuses, locationSources }:
         <BarChart data={useCases} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
           <XAxis dataKey="name" tick={AXIS_STYLE} interval={0} angle={-15} textAnchor="end" height={56} />
           <YAxis allowDecimals={false} tick={AXIS_STYLE} width={32} />
-          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(79,70,229,0.08)" }} />
+          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(53,230,162,0.08)" }} />
           <Bar dataKey="value" fill={BRAND} radius={[6, 6, 0, 0]} />
         </BarChart>
       </ChartCard>
@@ -107,7 +107,7 @@ export function Charts({ useCases, budgets, models, statuses, locationSources }:
         <BarChart data={budgets} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
           <XAxis dataKey="name" tick={AXIS_STYLE} interval={0} height={40} />
           <YAxis allowDecimals={false} tick={AXIS_STYLE} width={32} />
-          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(79,70,229,0.08)" }} />
+          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(53,230,162,0.08)" }} />
           <Bar dataKey="value" fill="#0ea5e9" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ChartCard>
@@ -127,7 +127,7 @@ export function Charts({ useCases, budgets, models, statuses, locationSources }:
             interval={0}
             orientation="right"
           />
-          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(79,70,229,0.08)" }} />
+          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(53,230,162,0.08)" }} />
           <Bar dataKey="value" fill="#22c55e" radius={[0, 6, 6, 0]} />
         </BarChart>
       </ChartCard>

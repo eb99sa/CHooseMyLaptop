@@ -1,35 +1,232 @@
 @import "tailwindcss";
 
 /* --------------------------------------------------------------------------
-   Design tokens — minimal, professional, Arabic-first.
-   Tailwind v4 reads @theme to generate utilities (bg-brand-600, text-ink, ...).
+   CHooseMyLaptop — "Chrome Spec Navigator" (Phase 1: token retheme).
+   Near-monochrome cold-mist UI. The interface is achromatic (carbon → mist);
+   color lives ONLY in the chrome/neon 3D scene and tiny state indicators. The
+   primary action is carbon black, never a brand hue. Arabic-first / RTL.
+   Source of truth: ds-bundle/design.md + ds-bundle/tokens/*.css.
+   NOTE: fonts (--font-sans/--font-mono) still point at the current next/font
+   vars — the IBM Plex swap lands in Phase 2 (app/layout.tsx).
 -------------------------------------------------------------------------- */
 @theme {
-  --font-sans: var(--font-tajawal), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  /* Families — IBM Plex (loaded via next/font in app/layout.tsx). Arabic-first
+     sans; mono for Latin micro-labels. Heavy bias, no thin weights. */
+  --font-sans: var(--font-plex-arabic), "IBM Plex Sans Arabic", "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, "Cascadia Code", monospace;
 
-  --color-canvas: #f6f7fb;
-  --color-surface: #ffffff;
-  --color-ink: #0f172a;
-  --color-muted: #5b6472;
-  --color-line: #e6e8ef;
+  /* Surfaces — cold mist gray → white */
+  --color-canvas: #f1f2f3;        /* page — cold mist gray */
+  --color-canvas-deep: #e6e8ea;   /* recessed stage */
+  --color-surface: #ffffff;       /* card / panel (now opaque) */
+  --color-surface-solid: #ffffff; /* back-compat alias */
+  --color-ink: #111111;           /* carbon black — primary text & CTA */
+  --color-muted: #696e74;         /* graphite — body secondary (AA on white) */
+  --color-line: #e4e6e9;          /* default divider */
+  --color-line-strong: #ccd0d4;   /* control border */
 
-  --color-brand-50: #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-200: #c7d2fe;
-  --color-brand-300: #a5b4fc;
-  --color-brand-400: #818cf8;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
+  /* "Brand" = carbon. There is no brand hue — components that reference
+     --color-brand-* resolve to the monochrome carbon ramp. */
+  --color-brand-50: #f3f4f5;
+  --color-brand-100: #e9eaec;
+  --color-brand-200: #d6d9dc;
+  --color-brand-300: #b7bbbf;
+  --color-brand-400: #cccfd2;   /* interpolated — ds ramp has no -400; kept for back-compat */
+  --color-brand-500: #2b2e32;   /* CTA hover (graphite lift) */
+  --color-brand-600: #111111;   /* primary CTA fill (carbon) */
+  --color-brand-700: #000000;   /* strongest */
 
-  --color-success: #16a34a;
-  --color-warning: #d97706;
-  --color-danger: #dc2626;
+  --color-on-brand: #ffffff;    /* text on carbon surfaces */
 
-  --radius-card: 18px;
+  /* Semantic state — text-safe deep values (neon variants live in :root, scene-only) */
+  --color-success: #16713e;
+  --color-warning: #8c5b14;
+  --color-danger: #b8413a;
 
-  --shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
-  --shadow-lift: 0 2px 4px rgba(16, 24, 40, 0.06), 0 16px 40px rgba(16, 24, 40, 0.1);
+  --radius-card: 14px;          /* = --radius-lg (sharper than the old 18px) */
+
+  /* Elevation — soft, cool, low-contrast for a light canvas; faint white
+     inset top-edge gives a machined lip. No neon in surrounding UI. */
+  --shadow-soft: 0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 2px 8px rgba(20, 24, 31, 0.06),
+    0 14px 30px rgba(20, 24, 31, 0.07);
+  --shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 10px 24px rgba(20, 24, 31, 0.09),
+    0 28px 64px rgba(20, 24, 31, 0.11);
+}
+
+/* --------------------------------------------------------------------------
+   Additive DS token foundation. These are referenced via var() (not as
+   Tailwind utilities), so they live in plain :root to avoid bloating the
+   generated utility set. Values copied verbatim from ds-bundle/tokens/*.css.
+-------------------------------------------------------------------------- */
+:root {
+  /* ---- Color extras ---- */
+  --color-canvas-veil: #ecedef;
+  --color-surface-2: #fafbfc;
+  --color-surface-sunken: #f5f6f7;
+  --color-ink-soft: #2b2e32;
+  --color-faint: #6d7176;        /* darkened for AA: ~4.9:1 on white/surface micro-labels (use --color-muted on the canvas page bg) */
+  --color-line-faint: #eef0f1;
+
+  /* ---- Neon scene accents — 3D scene + tiny state dots ONLY (never fills/CTAs) ---- */
+  --scene-cyan: #35e0d8;
+  --scene-green: #46e08a;
+  --scene-blue: #5aa9ff;
+  --scene-cyan-soft: rgba(53, 224, 216, 0.16);
+  --scene-green-soft: rgba(70, 224, 138, 0.16);
+  --scene-blue-soft: rgba(90, 169, 255, 0.16);
+  --scene-line: rgba(53, 224, 216, 0.55);
+  --scene-line-dim: rgba(53, 224, 216, 0.22);
+
+  /* ---- Chrome material stops (silver object / logo mark) ---- */
+  --chrome-hi: #ffffff;
+  --chrome-1: #eaecef;
+  --chrome-2: #c2c7cd;
+  --chrome-3: #9aa0a8;
+  --chrome-4: #d9dde1;
+  --chrome-lo: #7e848c;
+  --chrome-tint: #cfe6ea;
+
+  /* ---- Semantic state extras (neon = dots/bars/glows only) ---- */
+  --color-success-neon: #46e08a;
+  --color-warning-neon: #e8a83d;
+  --color-danger-neon: #ff6f6f;
+  --tint-success: rgba(31, 157, 87, 0.09);
+  --tint-warning: rgba(184, 121, 27, 0.10);
+  --tint-danger: rgba(192, 71, 61, 0.09);
+
+  /* ---- Semantic aliases (prefer these in product UI) ---- */
+  --text-primary: var(--color-ink);
+  --text-secondary: var(--color-muted);
+  --text-tertiary: var(--color-faint);
+  --surface-card: var(--color-surface);
+  --surface-page: var(--color-canvas);
+  --border-default: var(--color-line);
+  --border-control: var(--color-line-strong);
+  --action-primary: var(--color-ink);
+
+  /* ---- Type scale (rem) ---- */
+  --text-2xs: 0.6875rem;  /* 11 — micro mono labels */
+  --text-xs: 0.75rem;     /* 12 */
+  --text-sm: 0.875rem;    /* 14 */
+  --text-base: 1rem;      /* 16 — body */
+  --text-lg: 1.125rem;    /* 18 */
+  --text-xl: 1.375rem;    /* 22 */
+  --text-2xl: 1.75rem;    /* 28 */
+  --text-3xl: 2.25rem;    /* 36 */
+  --text-4xl: 3rem;       /* 48 */
+  --text-5xl: 3.75rem;    /* 60 */
+  --text-6xl: 4.5rem;     /* 72 — hero headline */
+
+  /* ---- Line height ---- */
+  --leading-none: 1;
+  --leading-tight: 1.08;
+  --leading-snug: 1.3;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* ---- Tracking (never letter-space Arabic) ---- */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.06em;
+  --tracking-mono: 0.2em;
+  --tracking-arabic: 0;
+
+  /* ---- Weights (heavy bias — no thin/light in product UI) ---- */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 700;
+
+  /* ---- Spacing (4px grid) ---- */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  --container-sm: 480px;
+  --container-md: 640px;
+  --container-lg: 880px;
+  --container-xl: 1120px;
+  --container-2xl: 1280px;
+
+  --pad-card: 24px;
+  --pad-panel: 32px;
+  --pad-tile: 12px;
+  --gap-tight: 8px;
+  --gap-base: 16px;
+  --gap-loose: 24px;
+
+  /* ---- Radius scale (sharp for technical UI; pill only for CTA/badges) ---- */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-pill: 999px;
+
+  /* ---- Shadow extras + scene glows ---- */
+  --shadow-xs: 0 1px 2px rgba(17, 20, 24, 0.05);
+  --shadow-sm: 0 1px 2px rgba(17, 20, 24, 0.05), 0 2px 6px rgba(17, 20, 24, 0.05);
+  --shadow-inset: inset 0 1px 2px rgba(20, 24, 31, 0.07);
+  --shadow-cta: 0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 8px 18px rgba(17, 17, 17, 0.18),
+    0 2px 6px rgba(17, 17, 17, 0.14);
+  --shadow-cta-hover: 0 1px 0 rgba(255, 255, 255, 0.16) inset,
+    0 12px 28px rgba(17, 17, 17, 0.24),
+    0 3px 8px rgba(17, 17, 17, 0.16);
+  --shadow-chrome: 0 30px 60px rgba(20, 24, 31, 0.18),
+    0 8px 20px rgba(20, 24, 31, 0.12);
+  --glow-cyan: 0 0 16px rgba(53, 224, 216, 0.5);
+  --glow-green: 0 0 16px rgba(70, 224, 138, 0.5);
+  --glow-blue: 0 0 16px rgba(90, 169, 255, 0.5);
+  --glow-soft: 0 0 8px rgba(53, 224, 216, 0.35);
+
+  /* ---- Motion (calm, no bounce; honour reduced-motion) ---- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-scene: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-instant: 90ms;
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-slow: 420ms;
+  --dur-scene: 1200ms;
+
+  /* ---- Depth / 3D (scene phase) ---- */
+  --z-base: 0;
+  --z-scene-stage: 1;
+  --z-scene-object: 2;
+  --z-scene-lines: 3;
+  --z-scene-markers: 4;
+  --z-content: 10;
+  --z-header: 50;
+  --z-overlay: 100;
+  --z-modal: 200;
+  --z-toast: 300;
+  --depth-near: 28px;
+  --depth-mid: 16px;
+  --depth-far: 6px;
+  --tilt-max: 7deg;
+  --parallax-max: 18px;
+  --scene-perspective: 1200px;
 }
 
 * {
@@ -38,23 +235,53 @@
 
 html {
   scroll-behavior: smooth;
+  color-scheme: light;
 }
 
 body {
-  background: var(--color-canvas);
+  background-color: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  min-height: 100vh;
+  position: relative;
 }
 
-/* Reusable component classes (kept small; pages mostly use utilities). */
+/* Cold-mist canvas: a single restrained achromatic vignette (white highlight at
+   top fading to the recessed mist). No color, no nebula — color is scene-only. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 42rem at 50% -12%, #ffffff, transparent 62%),
+    linear-gradient(var(--color-canvas), var(--color-canvas-deep));
+}
+
+/* Restrained carbon selection with a faint cool tint (a "tiny indicator"). */
+::selection {
+  background: rgba(53, 224, 216, 0.22);
+  color: var(--color-ink);
+}
+
+/* Focus: a high-contrast carbon outline (offset so it's never clipped by
+   overflow:hidden, and far more legible than a cyan ring on the light canvas). */
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
 @layer components {
   .card {
     background: var(--color-surface);
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-soft);
+    position: relative;
   }
 
   .btn {
@@ -62,50 +289,81 @@ body {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 12px;
-    font-weight: 600;
-    padding: 0.7rem 1.25rem;
-    transition: all 0.18s ease;
+    border-radius: var(--radius-md); /* secondary/ghost = small radius; primary overrides to pill */
+    font-weight: 700;
+    padding: 0.78rem 1.4rem;
+    border: 1px solid transparent;
+    transition: transform 0.18s var(--ease-out), background 0.18s ease,
+      box-shadow 0.18s ease, border-color 0.18s ease, color 0.18s ease;
     cursor: pointer;
     line-height: 1.2;
   }
+  /* primary — carbon black, pill, the single confident action */
   .btn-primary {
     background: var(--color-brand-600);
-    color: #fff;
-    box-shadow: var(--shadow-soft);
+    color: var(--color-on-brand);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-cta);
   }
   .btn-primary:hover {
-    background: var(--color-brand-700);
-    box-shadow: var(--shadow-lift);
+    background: var(--color-brand-500);
+    box-shadow: var(--shadow-cta-hover);
+    transform: translateY(-1px);
   }
+  /* ghost — outlined secondary, small (technical) radius */
   .btn-ghost {
-    background: transparent;
+    background: var(--color-surface);
     color: var(--color-ink);
-    border: 1px solid var(--color-line);
+    border: 1px solid var(--color-line-strong);
+    box-shadow: var(--shadow-xs);
   }
   .btn-ghost:hover {
-    background: var(--color-brand-50);
-    border-color: var(--color-brand-200);
+    border-color: var(--color-ink);
+    transform: translateY(-1px);
+  }
+  /* quiet — text only */
+  .btn-quiet {
+    background: transparent;
+    color: var(--color-muted);
+    padding-inline: 0.75rem;
+  }
+  .btn-quiet:hover {
+    color: var(--color-ink);
+    background: var(--color-canvas-veil);
+  }
+  .btn-sm {
+    font-size: var(--text-xs);
+    padding: 0.55rem 0.9rem;
+  }
+  .btn-lg {
+    font-size: var(--text-base);
+    padding: 1rem 1.85rem;
   }
   .btn:disabled {
-    opacity: 0.55;
+    opacity: 0.45;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 
   .input {
     width: 100%;
-    background: var(--color-surface);
-    border: 1px solid var(--color-line);
-    border-radius: 12px;
-    padding: 0.7rem 0.9rem;
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-sm);
+    padding: 0.7rem 0.85rem;
     font-size: 1rem;
     color: var(--color-ink);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+  .input::placeholder {
+    color: var(--color-faint);
   }
   .input:focus {
     outline: none;
-    border-color: var(--color-brand-400);
-    box-shadow: 0 0 0 3px var(--color-brand-100);
+    background: var(--color-surface);
+    border-color: var(--color-ink);
+    box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.06);
   }
 
   .chip {
@@ -113,23 +371,120 @@ body {
     align-items: center;
     gap: 0.35rem;
     padding: 0.25rem 0.7rem;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     font-size: 0.8rem;
     font-weight: 600;
   }
+
+  /* Eyebrow — mono, spaced, restrained micro-label (Latin; faint silver). */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-medium);
+    letter-spacing: var(--tracking-mono);
+    text-transform: uppercase;
+    color: var(--color-faint);
+    line-height: 1;
+  }
+
+  /* Static chrome scene — calm "idle" landing backdrop (CSS fallback for the
+     spec scene; the interactive WebGL ChromeScene is a later phase). Adapted
+     from ds-bundle/tokens/scene.css, with progress fixed at 0.18. */
+  /* Positioning is owned by the usage-site utilities (e.g. `absolute inset-0`);
+     this rule only paints the mist + clips. */
+  .stage {
+    overflow: hidden;
+    background: radial-gradient(120% 90% at 50% 18%, #ffffff 0%,
+      var(--color-canvas) 42%, var(--color-canvas-deep) 100%);
+  }
+  .chrome {
+    position: relative;
+    width: var(--chrome-size, 300px);
+    height: var(--chrome-size, 300px);
+    border-radius: 27%;
+    background: conic-gradient(from 215deg,
+      var(--chrome-1) 0deg, var(--chrome-2) 40deg, var(--chrome-hi) 80deg,
+      var(--chrome-3) 130deg, var(--chrome-4) 180deg, var(--chrome-lo) 225deg,
+      var(--chrome-2) 280deg, var(--chrome-hi) 320deg, var(--chrome-1) 360deg);
+    box-shadow: var(--shadow-chrome),
+      inset 0 3px 8px rgba(255, 255, 255, 0.85),
+      inset 0 -12px 26px rgba(80, 86, 94, 0.42),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  }
+  .chrome__sheen {
+    position: absolute;
+    inset: -20%;
+    border-radius: inherit;
+    pointer-events: none;
+    background: conic-gradient(from 0deg, transparent 0deg,
+      rgba(255, 255, 255, 0.5) 22deg, transparent 62deg, transparent 200deg,
+      rgba(255, 255, 255, 0.28) 250deg, transparent 300deg);
+  }
+  .chrome__rings {
+    position: absolute;
+    inset: 9%;
+    border-radius: 24%;
+    pointer-events: none;
+    opacity: 0.7;
+    background: repeating-radial-gradient(circle at 50% 50%,
+      rgba(255, 255, 255, 0.1) 0 1px, rgba(80, 86, 94, 0.1) 1px 3px, transparent 3px 9px);
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 60%, transparent 78%);
+    mask-image: radial-gradient(circle at 50% 50%, #000 60%, transparent 78%);
+  }
+  .chrome__die {
+    position: absolute;
+    inset: 31%;
+    border-radius: 16%;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(145deg, #3a3e45, #14161b 55%, #2a2e34);
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.18),
+      inset 0 -2px 6px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.35);
+  }
+  .chrome__core {
+    width: 26%;
+    height: 26%;
+    border-radius: 999px;
+    background: radial-gradient(circle, var(--scene-cyan), rgba(53, 224, 216, 0.2) 60%, transparent 70%);
+    opacity: 0.47;
+    box-shadow: 0 0 14px rgba(53, 224, 216, 0.36);
+  }
 }
 
-/* Subtle entrance animation used by hero/cards. */
+@keyframes csn-narrow {
+  0% { transform: scaleX(1); opacity: 0.9; }
+  50% { transform: scaleX(0.35); opacity: 0.45; }
+  100% { transform: scaleX(1); opacity: 0.9; }
+}
+
+/* Entrance + ambient motion. */
 @keyframes fadeup {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .animate-fadeup {
-  animation: fadeup 0.6s ease both;
+  animation: fadeup 0.7s var(--ease-out) both;
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-floaty {
+  animation: floaty 6s ease-in-out infinite;
+}
+
+.animate-narrow {
+  animation: csn-narrow 1.6s var(--ease-in-out) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

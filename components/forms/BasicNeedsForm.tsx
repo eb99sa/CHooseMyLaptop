@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
+import { NarrowingLoader } from "@/components/ui/NarrowingLoader";
+import { OptionChip } from "@/components/ui/OptionChip";
 import { LocationPicker } from "@/components/location/LocationPicker";
-import { cn } from "@/lib/utils";
+import type { IconName } from "@/components/ui/Icon";
 import type {
   BasicNeeds,
   ConditionPref,
@@ -37,7 +39,7 @@ interface FormErrors {
   submit?: string;
 }
 
-// A small reusable button-group for enum choices (radio-style segmented control).
+// A reusable group of option chips for enum choices (single-select).
 function ChoiceGroup<T extends string>({
   options,
   value,
@@ -48,26 +50,15 @@ function ChoiceGroup<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((opt) => {
-        const selected = opt.value === value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            aria-pressed={selected}
-            onClick={() => onChange(opt.value)}
-            className={cn(
-              "rounded-full border px-4 py-2 text-sm font-semibold transition-colors",
-              selected
-                ? "border-[var(--color-brand-600)] bg-[var(--color-brand-50)] text-[var(--color-brand-700)]"
-                : "border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-muted)] hover:border-[var(--color-brand-600)]",
-            )}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      {options.map((opt) => (
+        <OptionChip
+          key={opt.value}
+          label={opt.label}
+          selected={opt.value === value}
+          onClick={() => onChange(opt.value)}
+        />
+      ))}
     </div>
   );
 }
@@ -75,6 +66,20 @@ function ChoiceGroup<T extends string>({
 function toOptions<T extends string>(record: Record<T, string>): Array<{ value: T; label: string }> {
   return (Object.keys(record) as T[]).map((value) => ({ value, label: record[value] }));
 }
+
+// Best-fit line icons for each use case (decorative leading glyphs).
+const USE_CASE_ICONS: Record<UseCase, IconName> = {
+  teaching: "screen",
+  university: "graduation",
+  office: "briefcase",
+  programming: "cpu",
+  design: "sparkle",
+  engineering: "gauge",
+  gaming: "gpu",
+  video_editing: "screen",
+  business: "wallet",
+  family: "laptop",
+};
 
 export function BasicNeedsForm() {
   const router = useRouter();
@@ -196,13 +201,9 @@ export function BasicNeedsForm() {
     return (
       <Card className="p-10">
         <div className="flex flex-col items-center gap-4 text-center">
-          <span
-            className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--color-line)] border-t-[var(--color-brand-600)]"
-            aria-hidden
-          />
-          <p className="text-lg font-bold text-[var(--color-ink)]">{UI.generatingQuestions}</p>
+          <NarrowingLoader showCount={false} label={UI.generatingQuestions} />
           <p className="text-sm text-[var(--color-muted)]">
-            قد تستغرق هذه الخطوة بضع ثوانٍ. الرجاء عدم إغلاق الصفحة.
+            قد تاخذ الخطوة كم ثانية. لا تسكّر الصفحة.
           </p>
         </div>
       </Card>
@@ -219,38 +220,19 @@ export function BasicNeedsForm() {
           required
         >
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {USE_CASE_ORDER.map((uc) => {
-              const selected = primaryUseCase === uc;
-              return (
-                <button
-                  key={uc}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => {
-                    setPrimaryUseCase(uc);
-                    setErrors((prev) => ({ ...prev, use_case: undefined }));
-                  }}
-                  className={cn(
-                    "rounded-[var(--radius-card)] border p-4 text-start transition-colors",
-                    selected
-                      ? "border-[var(--color-brand-600)] bg-[var(--color-brand-50)] ring-1 ring-[var(--color-brand-600)]"
-                      : "border-[var(--color-line)] bg-[var(--color-surface)] hover:border-[var(--color-brand-600)]",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "block text-sm font-bold",
-                      selected ? "text-[var(--color-brand-700)]" : "text-[var(--color-ink)]",
-                    )}
-                  >
-                    {USE_CASE_LABELS[uc]}
-                  </span>
-                  <span className="mt-1 block text-xs leading-relaxed text-[var(--color-muted)]">
-                    {USE_CASE_DESCRIPTIONS[uc]}
-                  </span>
-                </button>
-              );
-            })}
+            {USE_CASE_ORDER.map((uc) => (
+              <OptionChip
+                key={uc}
+                icon={USE_CASE_ICONS[uc]}
+                label={USE_CASE_LABELS[uc]}
+                hint={USE_CASE_DESCRIPTIONS[uc]}
+                selected={primaryUseCase === uc}
+                onClick={() => {
+                  setPrimaryUseCase(uc);
+                  setErrors((prev) => ({ ...prev, use_case: undefined }));
+                }}
+              />
+            ))}
           </div>
           {errors.use_case && (
             <p className="mt-2 text-sm font-semibold text-[var(--color-danger)]">
@@ -355,17 +337,12 @@ export function BasicNeedsForm() {
         </Field>
 
         <Field label="لوحة المفاتيح">
-          <label className="flex cursor-pointer items-center gap-3">
-            <input
-              type="checkbox"
-              className="h-5 w-5 accent-[var(--color-brand-600)]"
-              checked={needsArabicKeyboard}
-              onChange={(e) => setNeedsArabicKeyboard(e.target.checked)}
-            />
-            <span className="text-sm font-semibold text-[var(--color-ink)]">
-              أحتاج لوحة مفاتيح عربية مطبوعة
-            </span>
-          </label>
+          <OptionChip
+            multi
+            label="أحتاج لوحة مفاتيح عربية مطبوعة"
+            selected={needsArabicKeyboard}
+            onClick={() => setNeedsArabicKeyboard((b) => !b)}
+          />
         </Field>
 
         <Field

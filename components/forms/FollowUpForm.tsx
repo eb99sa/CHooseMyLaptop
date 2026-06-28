@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card, CardMuted } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { UI } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
+import { Icon } from "@/components/ui/Icon";
+import { OptionChip } from "@/components/ui/OptionChip";
+import { QuestionCard } from "@/components/ui/QuestionCard";
+import { NarrowingLoader } from "@/components/ui/NarrowingLoader";
 import type { AIQuestion, UserAnswer } from "@/lib/types";
 
 interface FollowUpFormProps {
@@ -26,6 +27,7 @@ const YES_NO: { value: string; label: string }[] = [
 export function FollowUpForm({ sessionId, questions }: FollowUpFormProps) {
   const router = useRouter();
   const [answers, setAnswers] = useState<AnswerState>({});
+  const [step, setStep] = useState(0);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,44 +64,24 @@ export function FollowUpForm({ sessionId, questions }: FollowUpFormProps) {
     });
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit() {
     if (pending) return;
     setError(null);
-
-    // Require the quick choice questions (single-select / yes-no) to be answered.
-    // Text, number, and multi-select are left optional.
-    const unanswered = questions.filter((q) => {
-      if (q.question_type === "single_select" || q.question_type === "boolean") {
-        const v = answers[q.question_key];
-        return typeof v !== "string" || v === "";
-      }
-      return false;
-    });
-    if (unanswered.length > 0) {
-      setError("الرجاء الإجابة على الأسئلة المطلوبة قبل المتابعة.");
-      return;
-    }
-
     setPending(true);
-
     try {
       const res = await fetch(`/api/sessions/${sessionId}/answers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers: buildPayload() }),
       });
-
       const data = (await res.json().catch(() => null)) as
         | { ok?: boolean; error?: string }
         | null;
-
       if (!res.ok || !data?.ok) {
         setError("تعذّر إنشاء التقرير. تأكّد من اتصالك بالإنترنت وحاول مرة أخرى.");
         setPending(false);
         return;
       }
-
       router.push(`/sessions/${sessionId}/report`);
     } catch {
       setError("حدث خطأ غير متوقع. حاول مرة أخرى.");
@@ -107,67 +89,78 @@ export function FollowUpForm({ sessionId, questions }: FollowUpFormProps) {
     }
   }
 
-  if (pending) {
-    return <BuildingReport />;
+  if (pending) return <BuildingReport />;
+
+  // No follow-ups: go straight to building the recommendation.
+  if (questions.length === 0) {
+    return (
+      <Card className="animate-fadeup flex flex-col items-start gap-5">
+        <CardMuted>لا توجد أسئلة إضافية لحالتك. اضغط لإنشاء توصيتك.</CardMuted>
+        <Button
+          variant="primary"
+          onClick={submit}
+          iconEnd={<Icon name="arrow-left" size={16} />}
+        >
+          إنشاء التوصية
+        </Button>
+      </Card>
+    );
+  }
+
+  const q = questions[step];
+  const isLast = step === questions.length - 1;
+  // single-select / yes-no are required to advance; text/number/multi optional.
+  const required = q.question_type === "single_select" || q.question_type === "boolean";
+  const v = answers[q.question_key];
+  const answered =
+    q.question_type === "multi_select"
+      ? Array.isArray(v) && v.length > 0
+      : typeof v === "string" && v !== "";
+
+  function goNext() {
+    if (isLast) submit();
+    else setStep((s) => Math.min(questions.length - 1, s + 1));
+  }
+  function goBack() {
+    if (step === 0) router.push("/sessions/new");
+    else setStep((s) => Math.max(0, s - 1));
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {questions.length === 0 ? (
-        <Card className="animate-fadeup">
-          <CardMuted>
-            لا توجد أسئلة إضافية لحالتك. اضغط على الزر بالأسفل لإنشاء توصيتك.
-          </CardMuted>
-        </Card>
-      ) : (
-        questions.map((q, i) => (
-          <Card key={q.question_key} className="animate-fadeup">
-            <fieldset>
-              <legend className="text-base font-bold text-[var(--color-ink)]">
-                {i + 1}. {q.question_text}
-              </legend>
-              {q.reason && (
-                <p className="mt-1 text-xs text-[var(--color-muted)] leading-relaxed">
-                  {q.reason}
-                </p>
-              )}
-
-              <div className="mt-4">
-                <QuestionInput
-                  question={q}
-                  value={answers[q.question_key]}
-                  onSingle={(v) => setSingle(q.question_key, v)}
-                  onToggle={(v) => toggleMulti(q.question_key, v)}
-                />
-              </div>
-            </fieldset>
-          </Card>
-        ))
-      )}
+    <div className="animate-fadeup space-y-4">
+      <QuestionCard
+        key={q.question_key}
+        step={step + 1}
+        total={questions.length}
+        question={q.question_text}
+        hint={q.reason}
+        onBack={goBack}
+        onNext={goNext}
+        nextLabel={isLast ? "إنشاء التوصية" : "التالي"}
+        nextDisabled={required && !answered}
+      >
+        <QuestionInput
+          question={q}
+          value={v}
+          onSingle={(val) => setSingle(q.question_key, val)}
+          onToggle={(val) => toggleMulti(q.question_key, val)}
+        />
+      </QuestionCard>
 
       {error && (
         <p
           role="alert"
-          className="rounded-[var(--radius-card)] border border-[var(--color-danger)]/30 bg-red-50 px-4 py-3 text-sm font-semibold text-[var(--color-danger)]"
+          className="rounded-[var(--radius-card)] border border-[var(--color-danger)] bg-[var(--tint-danger)] px-4 py-3 text-sm font-semibold text-[var(--color-danger)]"
         >
           {error}
         </p>
       )}
-
-      <div className="flex items-center justify-between gap-3 pt-2">
-        <Link href="/sessions/new" className="btn btn-ghost text-sm">
-          {UI.back}
-        </Link>
-        <Button type="submit" variant="primary">
-          إنشاء التوصية
-        </Button>
-      </div>
-    </form>
+    </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Per-question renderer
+// Per-question renderer — option chips for choices, inputs for text/number.
 // ---------------------------------------------------------------------------
 interface QuestionInputProps {
   question: AIQuestion;
@@ -181,48 +174,48 @@ function QuestionInput({ question, value, onSingle, onToggle }: QuestionInputPro
 
   if (question_type === "boolean") {
     return (
-      <div className="flex flex-wrap gap-2">
+      <>
         {YES_NO.map((opt) => (
-          <OptionButton
+          <OptionChip
             key={opt.value}
             label={opt.label}
             selected={value === opt.value}
             onClick={() => onSingle(opt.value)}
           />
         ))}
-      </div>
+      </>
     );
   }
 
   if (question_type === "single_select") {
     return (
-      <div className="flex flex-wrap gap-2">
+      <>
         {(options ?? []).map((opt) => (
-          <OptionButton
+          <OptionChip
             key={opt.value}
             label={opt.label}
             selected={value === opt.value}
             onClick={() => onSingle(opt.value)}
           />
         ))}
-      </div>
+      </>
     );
   }
 
   if (question_type === "multi_select") {
     const selected = Array.isArray(value) ? value : [];
     return (
-      <div className="flex flex-wrap gap-2">
+      <>
         {(options ?? []).map((opt) => (
-          <OptionButton
+          <OptionChip
             key={opt.value}
             label={opt.label}
+            multi
             selected={selected.includes(opt.value)}
             onClick={() => onToggle(opt.value)}
-            multi
           />
         ))}
-      </div>
+      </>
     );
   }
 
@@ -240,7 +233,6 @@ function QuestionInput({ question, value, onSingle, onToggle }: QuestionInputPro
     );
   }
 
-  // text (and any unknown type) -> free text
   return (
     <input
       type="text"
@@ -253,58 +245,16 @@ function QuestionInput({ question, value, onSingle, onToggle }: QuestionInputPro
   );
 }
 
-interface OptionButtonProps {
-  label: string;
-  selected: boolean;
-  onClick: () => void;
-  multi?: boolean;
-}
-
-function OptionButton({ label, selected, onClick, multi }: OptionButtonProps) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={selected}
-      className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors",
-        selected
-          ? "border-[var(--color-brand-600)] bg-[var(--color-brand-600)] text-white"
-          : "border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-ink)] hover:border-[var(--color-brand-600)]",
-      )}
-    >
-      {multi && (
-        <span
-          aria-hidden
-          className={cn(
-            "flex h-4 w-4 items-center justify-center rounded border text-[10px] leading-none",
-            selected ? "border-white bg-white/20 text-white" : "border-[var(--color-line)]",
-          )}
-        >
-          {selected ? "✓" : ""}
-        </span>
-      )}
-      {label}
-    </button>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Loading state while the report is being built (can take several seconds).
 // ---------------------------------------------------------------------------
 function BuildingReport() {
   return (
-    <Card className="flex flex-col items-center gap-5 py-12 text-center animate-fadeup">
-      <span
-        aria-hidden
-        className="h-12 w-12 animate-spin rounded-full border-4 border-[var(--color-brand-50)] border-t-[var(--color-brand-600)]"
-      />
-      <div className="space-y-1">
-        <p className="text-base font-bold text-[var(--color-ink)]">{UI.buildingReport}</p>
-        <p className="text-sm text-[var(--color-muted)] leading-relaxed">
-          قد تستغرق هذه الخطوة بضع ثوانٍ. من فضلك لا تغلق الصفحة.
-        </p>
-      </div>
+    <Card className="flex animate-fadeup flex-col items-center gap-5 py-12 text-center">
+      <NarrowingLoader label="نضيّق الخيارات ونجهّز توصيتك…" total={120} />
+      <p className="text-sm leading-relaxed text-[var(--color-muted)]">
+        قد تاخذ الخطوة كم ثانية. لا تسكّر الصفحة.
+      </p>
     </Card>
   );
 }
