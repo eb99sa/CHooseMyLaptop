@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card, CardMuted } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { NarrowingLoader } from "@/components/ui/NarrowingLoader";
 import { UI } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { AIQuestion, UserAnswer } from "@/lib/types";
@@ -296,17 +297,11 @@ function OptionButton({ label, selected, onClick, multi }: OptionButtonProps) {
 // ---------------------------------------------------------------------------
 function BuildingReport() {
   return (
-    <Card className="flex flex-col items-center gap-5 py-12 text-center animate-fadeup">
-      <span
-        aria-hidden
-        className="h-12 w-12 animate-spin rounded-full border-4 border-[var(--color-brand-50)] border-t-[var(--color-brand-600)]"
-      />
-      <div className="space-y-1">
-        <p className="text-base font-bold text-[var(--color-ink)]">{UI.buildingReport}</p>
-        <p className="text-sm text-[var(--color-muted)] leading-relaxed">
-          قد تستغرق هذه الخطوة بضع ثوانٍ. من فضلك لا تغلق الصفحة.
-        </p>
-      </div>
+    <Card className="flex animate-fadeup flex-col items-center gap-5 py-12 text-center">
+      <NarrowingLoader label="نضيّق الخيارات ونجهّز توصيتك…" total={120} />
+      <p className="text-sm leading-relaxed text-[var(--color-muted)]">
+        قد تاخذ الخطوة كم ثانية. لا تسكّر الصفحة.
+      </p>
     </Card>
   );
 }

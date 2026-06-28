@@ -1,20 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Tajawal, JetBrains_Mono } from "next/font/google";
+import { IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
 import { APP_NAME, APP_TAGLINE } from "@/lib/i18n";
 import "./globals.css";
 
-const tajawal = Tajawal({
+// Arabic-first + Latin sans. Heavy bias (400/500/600/700); no thin weights.
+const plexArabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic", "latin"],
-  weight: ["400", "500", "700", "800"],
-  variable: "--font-tajawal",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-plex-arabic",
   display: "swap",
 });
 
-// Techno-accent monospace for numerals, prices, and scores (LTR contexts).
-const jetbrainsMono = JetBrains_Mono({
+// Mono for Latin micro-labels, numerals, prices, and scores (LTR contexts).
+const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-mono-techno",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-plex-mono",
   display: "swap",
 });
 
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0e0d",
+  themeColor: "#f1f2f3",
   width: "device-width",
   initialScale: 1,
 };
@@ -36,7 +37,7 @@ export default function RootLayout({
     <html
       lang="ar"
       dir="rtl"
-      className={`${tajawal.variable} ${jetbrainsMono.variable}`}
+      className={`${plexArabic.variable} ${plexMono.variable}`}
     >
       <body>{children}</body>
     </html>

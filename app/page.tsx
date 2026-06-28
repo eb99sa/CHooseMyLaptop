@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { APP_NAME, UI, USE_CASE_LABELS, USE_CASE_ORDER } from "@/lib/i18n";
-// Hero3D mount-gates its WebGL canvas, so it's safe to import into this Server
-// Component. It renders as an absolutely-positioned, full-bleed background.
-import Hero3D from "@/components/landing/Hero3D";
+// Static CSS chrome object (no WebGL) — the calm idle backdrop for the spec
+// scene. The interactive WebGL ChromeScene lands in a later phase.
+import HeroChrome from "@/components/landing/HeroChrome";
 
 // Thin-line SVG step icons (no emoji — keeps the techno/minimalist register).
 function IconAnswer() {
@@ -44,13 +44,14 @@ export default function HomePage() {
 
       {/* ---- Hero: full-bleed isometric space scene; content floats inside ---- */}
       <section className="relative isolate flex min-h-[88vh] items-center overflow-hidden">
-        <Hero3D />
-        {/* contrast scrim behind the (RTL, start-aligned) copy */}
+        <HeroChrome />
+        {/* mist veil behind the (RTL, start-aligned) copy — keeps carbon text
+            high-contrast over the chrome object without darkening the canvas */}
         <div
           className="pointer-events-none absolute inset-0 -z-0"
           style={{
             background:
-              "radial-gradient(72% 75% at 72% 42%, rgba(8,10,18,0.9), rgba(8,10,18,0.35) 52%, transparent 78%)",
+              "radial-gradient(78% 82% at 76% 45%, rgba(241,242,243,0.94), rgba(241,242,243,0.6) 52%, transparent 82%)",
           }}
         />
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4">

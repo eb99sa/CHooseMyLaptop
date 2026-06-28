@@ -1,15 +1,18 @@
 import Link from "next/link";
-import { Logo } from "@/components/ui/Logo";
+import { StateView } from "@/components/ui/StateView";
 
 export default function NotFound() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-6 text-center">
-      <Logo />
-      <h1 className="text-6xl font-extrabold text-[var(--color-brand-600)]">٤٠٤</h1>
-      <p className="text-lg text-[var(--color-muted)]">الصفحة التي تبحث عنها غير موجودة.</p>
-      <Link href="/" className="btn btn-primary">
-        العودة إلى الرئيسية
-      </Link>
+    <main className="mx-auto flex min-h-screen max-w-2xl items-center justify-center p-6">
+      <StateView
+        icon="search"
+        title="الصفحة مو موجودة"
+        body="الرابط اللي تدوّر عليه مو متوفّر أو تغيّر. ارجع للرئيسية وكمّل من هناك."
+      >
+        <Link href="/" className="btn btn-primary">
+          الرئيسية
+        </Link>
+      </StateView>
     </main>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
+import { NarrowingLoader } from "@/components/ui/NarrowingLoader";
 import { LocationPicker } from "@/components/location/LocationPicker";
 import { cn } from "@/lib/utils";
 import type {
@@ -196,13 +197,9 @@ export function BasicNeedsForm() {
     return (
       <Card className="p-10">
         <div className="flex flex-col items-center gap-4 text-center">
-          <span
-            className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--color-line)] border-t-[var(--color-brand-600)]"
-            aria-hidden
-          />
-          <p className="text-lg font-bold text-[var(--color-ink)]">{UI.generatingQuestions}</p>
+          <NarrowingLoader showCount={false} label={UI.generatingQuestions} />
           <p className="text-sm text-[var(--color-muted)]">
-            قد تستغرق هذه الخطوة بضع ثوانٍ. الرجاء عدم إغلاق الصفحة.
+            قد تاخذ الخطوة كم ثانية. لا تسكّر الصفحة.
           </p>
         </div>
       </Card>

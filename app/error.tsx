@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
+import { StateView } from "@/components/ui/StateView";
+import { Icon } from "@/components/ui/Icon";
 
-// Route-level error boundary (App Router). Shows a friendly Arabic message
-// and lets the user retry.
+// Route-level error boundary (App Router). Honest message + retry, in the
+// Chrome Spec Navigator state pattern.
 export default function Error({
   error,
   reset,
@@ -12,19 +15,25 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Surface the error to logs for debugging.
     console.error(error);
   }, [error]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-6 text-center">
-      <h1 className="text-3xl font-extrabold">حدث خطأ غير متوقع</h1>
-      <p className="max-w-md text-[var(--color-muted)]">
-        نعتذر، حصل خطأ أثناء تنفيذ العملية. يمكنك إعادة المحاولة.
-      </p>
-      <button onClick={reset} className="btn btn-primary">
-        إعادة المحاولة
-      </button>
+    <main className="mx-auto flex min-h-screen max-w-2xl items-center justify-center p-6">
+      <StateView
+        tone="danger"
+        icon="alert"
+        title="صار خطأ غير متوقع"
+        body="ما قدرنا نكمّل العملية الحين. تأكد من اتصالك وأعد المحاولة."
+      >
+        <button onClick={reset} className="btn btn-primary">
+          <Icon name="refresh" size={16} />
+          أعد المحاولة
+        </button>
+        <Link href="/" className="btn btn-quiet">
+          الرئيسية
+        </Link>
+      </StateView>
     </main>
   );
 }

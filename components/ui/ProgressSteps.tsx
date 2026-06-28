@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Icon } from "@/components/ui/Icon";
 
 interface ProgressStepsProps {
   current: number; // 1-based
@@ -7,30 +8,41 @@ interface ProgressStepsProps {
 
 export function ProgressSteps({ current, steps }: ProgressStepsProps) {
   return (
-    <ol className="flex items-center gap-3 w-full">
+    <ol className="flex w-full items-center gap-3">
       {steps.map((label, i) => {
         const n = i + 1;
         const done = n < current;
         const active = n === current;
         return (
-          <li key={label} className="flex items-center gap-3 flex-1">
+          <li key={label} className="flex flex-1 items-center gap-3">
             <div className="flex items-center gap-2">
               <span
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-colors",
-                  done && "bg-[var(--color-success)] text-[var(--color-on-brand)]",
+                  "relative flex h-8 w-8 items-center justify-center rounded-full font-mono text-sm font-bold transition-all",
+                  done && "bg-[var(--color-ink)] text-[var(--color-on-brand)]",
                   active &&
-                    "bg-[var(--color-brand-600)] text-[var(--color-on-brand)] shadow-[0_0_16px_rgba(53,230,162,0.4)]",
-                  !done && !active &&
-                    "bg-[rgba(150,200,178,0.06)] text-[var(--color-muted)] ring-1 ring-[var(--color-line)]",
+                    "bg-[var(--color-ink)] text-[var(--color-on-brand)] shadow-[0_0_0_4px_rgba(17,17,17,0.07)]",
+                  !done &&
+                    !active &&
+                    "bg-[var(--color-surface-2)] text-[var(--color-faint)] ring-1 ring-[var(--color-line-strong)]",
                 )}
               >
-                {done ? "✓" : n}
+                {done ? <Icon name="check" size={16} /> : n}
+                {active && (
+                  <span
+                    aria-hidden
+                    className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-[var(--scene-cyan)] shadow-[var(--glow-soft)]"
+                  />
+                )}
               </span>
               <span
                 className={cn(
-                  "text-sm font-semibold whitespace-nowrap",
-                  active ? "text-[var(--color-ink)]" : "text-[var(--color-muted)]",
+                  "whitespace-nowrap text-sm font-semibold",
+                  active
+                    ? "text-[var(--color-ink)]"
+                    : done
+                      ? "text-[var(--color-muted)]"
+                      : "text-[var(--color-faint)]",
                 )}
               >
                 {label}
