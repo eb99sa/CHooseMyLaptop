@@ -30,7 +30,12 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-3 border-b border-[var(--color-line)] py-2 last:border-b-0">
       <span className="shrink-0 text-sm text-[var(--color-muted)]">{label}</span>
-      <span className="text-end text-sm font-semibold text-[var(--color-ink)]">{value}</span>
+      <span
+        className="text-end text-sm font-semibold text-[var(--color-ink)]"
+        style={{ unicodeBidi: "plaintext" }}
+      >
+        {value}
+      </span>
     </div>
   );
 }

@@ -51,7 +51,7 @@ export function QuestionCard({
           {eyebrow}
         </span>
       </div>
-      <div className="p-7 sm:p-8">
+      <div className="p-5 sm:p-8">
         {step != null && (
           <div
             className="mb-3.5 font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-[var(--color-faint)]"

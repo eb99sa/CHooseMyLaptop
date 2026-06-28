@@ -37,7 +37,7 @@ export function ProgressSteps({ current, steps }: ProgressStepsProps) {
               </span>
               <span
                 className={cn(
-                  "whitespace-nowrap text-sm font-semibold",
+                  "hidden whitespace-nowrap text-sm font-semibold min-[560px]:inline",
                   active
                     ? "text-[var(--color-ink)]"
                     : done

@@ -49,7 +49,7 @@ export function NarrowingLoader({
       role="status"
       aria-live="polite"
     >
-      <div className="flex items-baseline gap-2 font-mono text-sm tracking-[0.06em] text-[var(--color-muted)]">
+      <div className="flex items-baseline gap-2 font-mono text-sm text-[var(--color-muted)]">
         {showCount && (
           <b className="text-2xl font-bold tabular-nums text-[var(--color-ink)]">{count}</b>
         )}

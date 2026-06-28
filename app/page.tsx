@@ -56,7 +56,9 @@ export default function HomePage() {
         />
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4">
           <div className="max-w-2xl animate-fadeup">
-            <span className="eyebrow">{APP_NAME} • بدون حساب</span>
+            <span className="font-mono text-[0.6875rem] font-medium text-[var(--color-muted)]">
+              {APP_NAME} • بدون حساب
+            </span>
             <h1 className="mt-5 text-4xl font-extrabold leading-[1.04] tracking-tight text-[var(--color-ink)] [text-wrap:balance] sm:text-5xl lg:text-6xl">
               {UI.heroTitle}
             </h1>
@@ -82,7 +84,9 @@ export default function HomePage() {
         {/* ---- How it works: a fanned, isometric 3-step sequence ---- */}
         <section id="how-it-works" className="py-20 sm:py-28">
           <div className="text-center">
-            <span className="eyebrow">٣ خطوات</span>
+            <span className="font-mono text-[0.6875rem] font-medium text-[var(--color-muted)]">
+              ٣ خطوات
+            </span>
             <h2 className="mt-4 text-2xl font-bold text-[var(--color-ink)] sm:text-3xl">
               {UI.howItWorks}
             </h2>

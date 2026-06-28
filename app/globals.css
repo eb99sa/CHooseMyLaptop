@@ -39,9 +39,9 @@
   --color-on-brand: #ffffff;    /* text on carbon surfaces */
 
   /* Semantic state — text-safe deep values (neon variants live in :root, scene-only) */
-  --color-success: #1f9d57;
-  --color-warning: #b8791b;
-  --color-danger: #c0473d;
+  --color-success: #16713e;
+  --color-warning: #8c5b14;
+  --color-danger: #b8413a;
 
   --radius-card: 14px;          /* = --radius-lg (sharper than the old 18px) */
 
@@ -66,7 +66,7 @@
   --color-surface-2: #fafbfc;
   --color-surface-sunken: #f5f6f7;
   --color-ink-soft: #2b2e32;
-  --color-faint: #9aa0a6;        /* silver mist — micro-labels/captions ONLY (fails AA as body) */
+  --color-faint: #6d7176;        /* darkened for AA: ~4.9:1 on white/surface micro-labels (use --color-muted on the canvas page bg) */
   --color-line-faint: #eef0f1;
 
   /* ---- Neon scene accents — 3D scene + tiny state dots ONLY (never fills/CTAs) ---- */
@@ -267,10 +267,11 @@ body::before {
   color: var(--color-ink);
 }
 
-/* Focus: a single thin neon-cyan signal (the one sanctioned UI use of neon). */
+/* Focus: a high-contrast carbon outline (offset so it's never clipped by
+   overflow:hidden, and far more legible than a cyan ring on the light canvas). */
 :focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--color-canvas), 0 0 0 4px var(--scene-cyan);
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
 

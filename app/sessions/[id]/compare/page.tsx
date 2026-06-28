@@ -83,7 +83,7 @@ export default async function ComparePage({ params }: PageProps) {
             <table className="w-full min-w-[640px] border-separate border-spacing-0 text-sm">
               <thead>
                 <tr>
-                  <th className={cn(firstCol, "border-b border-[var(--color-line)] font-mono text-xs uppercase tracking-[0.06em] text-[var(--color-faint)]")}>
+                  <th className={cn(firstCol, "border-b border-[var(--color-line)] text-xs font-semibold text-[var(--color-muted)]")}>
                     المواصفة
                   </th>
                   {laptops.map((s) => {
@@ -91,6 +91,7 @@ export default async function ComparePage({ params }: PageProps) {
                     return (
                       <th
                         key={s.listing.id}
+                        style={{ unicodeBidi: "plaintext" }}
                         className={cn(
                           "border-b border-[var(--color-line)] p-4 text-start align-top",
                           isBest &&
@@ -124,6 +125,7 @@ export default async function ComparePage({ params }: PageProps) {
                       return (
                         <td
                           key={s.listing.id}
+                          style={{ unicodeBidi: "plaintext" }}
                           className={cn(
                             "border-b border-[var(--color-line)] p-4",
                             isBest && "bg-[var(--color-canvas-veil)]",

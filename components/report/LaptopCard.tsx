@@ -37,11 +37,11 @@ export function LaptopCard({ scored, highlight = false, badgeLabel }: LaptopCard
             {listing.product_title}
           </h3>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--color-muted)]">
-            {listing.brand && <span>{listing.brand}</span>}
+            {listing.brand && <span dir="auto">{listing.brand}</span>}
             {listing.store_name && (
               <>
                 <span aria-hidden>•</span>
-                <span>{listing.store_name}</span>
+                <span dir="auto">{listing.store_name}</span>
               </>
             )}
           </div>
@@ -52,7 +52,7 @@ export function LaptopCard({ scored, highlight = false, badgeLabel }: LaptopCard
         <FitScore value={final_score} size={72} />
       </header>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2">
         <SpecSignal icon="cpu" code="CPU" value={s.cpu} />
         <SpecSignal icon="ram" code="RAM" value={`${s.ram_gb} GB`} />
         <SpecSignal icon="ssd" code={s.storage_type} value={`${s.storage_gb} GB`} />
