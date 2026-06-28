@@ -20,10 +20,14 @@ export function ScoreBar({ label, value }: ScoreBarProps) {
         <span className="text-[var(--color-muted)]">{label}</span>
         <span className="font-bold tabular-nums">{v}</span>
       </div>
-      <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+      <div className="h-2 rounded-full bg-[rgba(150,200,178,0.1)] overflow-hidden">
         <div
           className="h-full rounded-full transition-all"
-          style={{ width: `${v}%`, background: colorFor(v) }}
+          style={{
+            width: `${v}%`,
+            background: colorFor(v),
+            boxShadow: `0 0 12px ${colorFor(v)}`,
+          }}
         />
       </div>
     </div>

@@ -148,7 +148,7 @@ export function FollowUpForm({ sessionId, questions }: FollowUpFormProps) {
       {error && (
         <p
           role="alert"
-          className="rounded-[var(--radius-card)] border border-[var(--color-danger)]/30 bg-red-50 px-4 py-3 text-sm font-semibold text-[var(--color-danger)]"
+          className="rounded-[var(--radius-card)] border border-[var(--color-danger)]/30 bg-[rgba(255,111,111,0.1)] px-4 py-3 text-sm font-semibold text-[var(--color-danger)]"
         >
           {error}
         </p>
@@ -269,8 +269,8 @@ function OptionButton({ label, selected, onClick, multi }: OptionButtonProps) {
       className={cn(
         "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors",
         selected
-          ? "border-[var(--color-brand-600)] bg-[var(--color-brand-600)] text-white"
-          : "border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-ink)] hover:border-[var(--color-brand-600)]",
+          ? "border-[var(--color-brand-600)] bg-[var(--color-brand-600)] text-[var(--color-on-brand)] shadow-[0_0_16px_rgba(53,230,162,0.3)]"
+          : "border-[var(--color-line-strong)] bg-[rgba(150,200,178,0.04)] text-[var(--color-ink)] hover:border-[var(--color-brand-600)] hover:text-[var(--color-brand-700)]",
       )}
     >
       {multi && (
@@ -278,7 +278,9 @@ function OptionButton({ label, selected, onClick, multi }: OptionButtonProps) {
           aria-hidden
           className={cn(
             "flex h-4 w-4 items-center justify-center rounded border text-[10px] leading-none",
-            selected ? "border-white bg-white/20 text-white" : "border-[var(--color-line)]",
+            selected
+              ? "border-[var(--color-on-brand)] bg-[var(--color-on-brand)]/20 text-[var(--color-on-brand)]"
+              : "border-[var(--color-line)]",
           )}
         >
           {selected ? "✓" : ""}

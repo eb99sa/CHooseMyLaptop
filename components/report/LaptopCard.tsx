@@ -51,7 +51,7 @@ export function LaptopCard({ scored, highlight = false, badgeLabel }: LaptopCard
             </>
           )}
         </div>
-        <p className="text-lg font-extrabold text-[var(--color-brand-700)]">
+        <p className="font-mono text-lg font-extrabold text-[var(--color-brand-700)]">
           {formatPrice(listing.price, listing.currency)}
         </p>
       </header>
@@ -63,10 +63,10 @@ export function LaptopCard({ scored, highlight = false, badgeLabel }: LaptopCard
       <div className="space-y-2">
         <ScoreBar label={UI.finalScore} value={final_score} />
         <div className="flex gap-2">
-          <span className="chip bg-slate-100 text-slate-600">
+          <span className="chip bg-[rgba(150,200,178,0.07)] text-[var(--color-muted)] ring-1 ring-[var(--color-line)] font-mono">
             {UI.fitScore}: <b className="tabular-nums">{Math.round(fit_score)}</b>
           </span>
-          <span className="chip bg-slate-100 text-slate-600">
+          <span className="chip bg-[rgba(150,200,178,0.07)] text-[var(--color-muted)] ring-1 ring-[var(--color-line)] font-mono">
             {UI.roiScore}: <b className="tabular-nums">{Math.round(roi_score)}</b>
           </span>
         </div>
@@ -93,7 +93,7 @@ export function LaptopCard({ scored, highlight = false, badgeLabel }: LaptopCard
           <p className="mb-1 text-sm font-bold text-[var(--color-ink)]">{UI.warnings}</p>
           <ul className="space-y-1">
             {warnings.map((w, i) => (
-              <li key={i} className="flex gap-2 text-sm text-amber-700">
+              <li key={i} className="flex gap-2 text-sm text-[var(--color-warning)]">
                 <span className="mt-0.5 shrink-0" aria-hidden>
                   !
                 </span>

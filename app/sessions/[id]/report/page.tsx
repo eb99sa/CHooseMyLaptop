@@ -169,7 +169,7 @@ export default async function ReportPage({ params }: PageProps) {
                 ))}
               </div>
               {report.avoid && (
-                <div className="rounded-[var(--radius-card)] border border-red-200 bg-red-50 p-4">
+                <div className="rounded-[var(--radius-card)] border border-[rgba(255,111,111,0.35)] bg-[rgba(255,111,111,0.08)] p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <Badge tone="danger">{RECOMMENDATION_TYPE_LABELS.avoid}</Badge>
                   </div>

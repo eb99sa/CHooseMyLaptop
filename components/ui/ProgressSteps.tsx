@@ -18,9 +18,11 @@ export function ProgressSteps({ current, steps }: ProgressStepsProps) {
               <span
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-colors",
-                  done && "bg-[var(--color-success)] text-white",
-                  active && "bg-[var(--color-brand-600)] text-white",
-                  !done && !active && "bg-slate-100 text-[var(--color-muted)]",
+                  done && "bg-[var(--color-success)] text-[var(--color-on-brand)]",
+                  active &&
+                    "bg-[var(--color-brand-600)] text-[var(--color-on-brand)] shadow-[0_0_16px_rgba(53,230,162,0.4)]",
+                  !done && !active &&
+                    "bg-[rgba(150,200,178,0.06)] text-[var(--color-muted)] ring-1 ring-[var(--color-line)]",
                 )}
               >
                 {done ? "✓" : n}
