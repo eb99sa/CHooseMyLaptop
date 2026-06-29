@@ -29,6 +29,7 @@ import { wibiAdapter } from "@/lib/scrape/sources/wibi";
 import { xciteAdapter } from "@/lib/scrape/sources/xcite";
 import { nextAdapter } from "@/lib/scrape/sources/next";
 import { replaceSourceListings } from "@/lib/scrape/upsert";
+import { closeBrowser } from "@/lib/scrape/headless";
 import { createServiceClient, isDbConfigured } from "@/lib/supabase/service";
 
 // `next` is geo-blocked to non-Kuwait IPs — it only yields data when run from Kuwait.
@@ -64,4 +65,5 @@ for (const adapter of selected) {
   }
 }
 
+await closeBrowser(); // shut down the headless browser if any adapter used it
 console.log(`\n${dryRun ? "[dry-run] no DB writes." : `[scrape] done: ${total} rows written.`}`);

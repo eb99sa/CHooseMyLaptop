@@ -1,17 +1,22 @@
-// Next Computer Store (nextstore.com.kw) adapter — Magento 2. The sitemap +
-// product pages are GEO-BLOCKED (HTTP 403) to non-Kuwait IPs, so this must run
-// from a Kuwaiti connection. Clever bit: the product URL SLUG already encodes the
-// specs (brand-model-cpu-ram-storage-gpu-display-os), so specs come from the URL;
-// only PRICE + availability need the live page (multi-strategy Magento extraction).
+// Next Computer Store (nextstore.com.kw) adapter — Magento 2 behind Cloudflare.
+// Product pages serve a "Just a moment…" anti-bot challenge that plain fetch can't
+// pass, so they're fetched with a real headless browser (lib/scrape/headless.ts).
+// Best run from a Kuwaiti residential connection (Cloudflare waved the browser
+// through with no challenge there). The spec-rich URL slug supplies the specs; the
+// browser-rendered page supplies price + availability.
 
 import type { NormalizedListing, StoreAdapter } from "@/lib/scrape/types";
 import { ACCESSORY_RE, decodeEntities, guessBrand, looksLikeLaptop, normalizeSpecs } from "@/lib/scrape/specs";
-import { enumerateSitemap, fetchText } from "@/lib/scrape/sitemap";
+import { enumerateSitemap } from "@/lib/scrape/sitemap";
+import { fetchRendered } from "@/lib/scrape/headless";
 
 const SITEMAP = "https://www.nextstore.com.kw/sitemap_index.xml";
 // A laptop slug carries "<n>gb-ram" + a storage type — accessories/monitors don't.
 const LAPTOP_SLUG = /\d+gb-ram/i;
 const STORAGE_RE = /(ssd|hdd|emmc|nvme)/i;
+// Per-run cap — browser fetches are ~3-5s each, so a full ~197-laptop run is slow.
+// Override with SCRAPE_NEXT_LIMIT (e.g. SCRAPE_NEXT_LIMIT=20 for a quick run).
+const NEXT_MAX_URLS = Number(process.env.SCRAPE_NEXT_LIMIT) || 200;
 
 function slugFrom(url: string): string {
   const last = url.split("/").pop() ?? url;
@@ -75,7 +80,7 @@ export const nextAdapter: StoreAdapter = {
   store_name: "Next Computer Store",
   async fetchListings(): Promise<NormalizedListing[]> {
     const urls = (
-      await enumerateSitemap(SITEMAP, { filter: LAPTOP_SLUG, maxSubSitemaps: 4, maxUrls: 200 })
+      await enumerateSitemap(SITEMAP, { filter: LAPTOP_SLUG, maxSubSitemaps: 4, maxUrls: NEXT_MAX_URLS })
     ).filter((u) => /\.html$/i.test(u) && STORAGE_RE.test(u) && !ACCESSORY_RE.test(u));
 
     const out: NormalizedListing[] = [];
@@ -85,7 +90,7 @@ export const nextAdapter: StoreAdapter = {
       const specs = normalizeSpecs({ title: slug, brand }); // specs from the URL slug
       if (!looksLikeLaptop(slug, specs.cpu_tier)) continue;
 
-      const html = await fetchText(url, 25_000); // 403 outside Kuwait -> null -> skip
+      const html = await fetchRendered(url); // real browser clears Cloudflare's challenge
       if (!html) continue;
       const price = extractPrice(html);
       if (price === null || price <= 0) continue; // no price = not ingestable
@@ -109,7 +114,6 @@ export const nextAdapter: StoreAdapter = {
         review_count: null,
         specs: normalizeSpecs({ title, brand, text: slug }), // re-normalize with the real title
       });
-      await new Promise((r) => setTimeout(r, 500)); // polite delay
     }
     return out;
   },
