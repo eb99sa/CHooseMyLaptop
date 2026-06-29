@@ -89,8 +89,21 @@ ignore the compiled `_ds_bundle.*` / `styles.css` (those are a stale **dark** bu
 
 ## Phase 2 (in progress)
 
-Beyond the MVP: full **RAG** over `knowledge_documents` + `knowledge_embeddings`
-(`pgvector(1536)` already scaffolded in `supabase/schema.sql`), a real **multi-agent
-MECE** simulation engine (today `SPEC_SYSTEM` only *role-plays* a 4-expert team in one
-prompt), an upgraded scoring **rubric**, plus store scraping and price tracking. Keep the
-deterministic-fallback and server-only invariants when adding these.
+Sequence: **rubric → RAG → multi-agent MECE.**
+
+- **Rubric v2 — done.** `lib/rubric.ts` owns seven MECE sub-engines; `lib/scoring.ts`
+  orchestrates. Per-use-case weights (`USE_CASE_WEIGHTS`), a data-confidence model, no
+  double-counting. Verify: `npx tsx scripts/verify-rubric.mts`.
+- **RAG — scaffolded + wired (gated).** Curated corpus (`lib/ai/rag/corpus.ts`) →
+  `knowledge_documents`/`knowledge_embeddings` via `scripts/ingest-knowledge.mts`;
+  retrieval (`lib/ai/rag/retrieve.ts`) grounds the spec prompt in `recommend.ts`.
+  Embeddings (`lib/ai/embeddings.ts`) use OpenAI `text-embedding-3-small` (1536-d) —
+  OpenRouter serves no embeddings. **OFF until `OPENAI_API_KEY` is set + `supabase/rag.sql`
+  is run + the corpus is ingested**; until then retrieval returns `[]` and the flow is
+  byte-identical to before. Verify the wiring: `npx tsx scripts/verify-rag.mts`.
+- **Multi-agent MECE — next.** Today `SPEC_SYSTEM` only *role-plays* a 4-expert team in
+  one prompt; make those real agents, with the hybrid/progressive execution model.
+
+Invariants when extending: deterministic fallback for every AI call; server-only DB;
+keep `ScoredLaptop`/`FinalReport` backward-compatible; bump `PROMPT_VERSION` on any prompt
+change (now `2026-06-29.v2`).

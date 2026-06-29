@@ -103,6 +103,10 @@ Variables:
   `service_role` (secret).
 - `OPENROUTER_API_KEY` (optional) + `OPENROUTER_MODEL` (default
   `openai/gpt-4o-mini`; any current OpenRouter slug that supports JSON output).
+- `OPENAI_API_KEY` (optional) — enables Phase 2 **RAG** retrieval (embeddings via
+  `text-embedding-3-small`). Without it, retrieval is skipped and the flow is
+  unchanged. After setting it, run `supabase/rag.sql` then
+  `npx tsx scripts/ingest-knowledge.mts`.
 - `MAPBOX_TOKEN` (optional) — enables location search + reverse geocode; if empty,
   the location section falls back to a plain manual text field.
 - `ADMIN_PASSWORD` + `ADMIN_SESSION_SECRET` — gate the `/admin` area.
@@ -245,11 +249,18 @@ supabase/
 
 ---
 
-## 🛣️ Phase 2 (not in this build)
-Automated multi-store scraping, full RAG with vector search, price-history
-tracking, availability monitoring, university/major research automation, the
-multi-agent MECE simulation engine, advanced analytics, price-drop alerts, full
-Arabic/English bilingual UI, browser extension, mobile app.
+## 🛣️ Phase 2 (in progress)
+**Shipped:** an upgraded, use-case-aware scoring **rubric** (`lib/rubric.ts`) and a
+**RAG** retrieval layer — a curated Arabic knowledge corpus (`lib/ai/rag/corpus.ts`)
+embedded into `pgvector` and retrieved via `match_knowledge` (`supabase/rag.sql`) to
+ground the spec recommendation. RAG is **off until `OPENAI_API_KEY` is set** and the
+corpus is ingested (`npx tsx scripts/ingest-knowledge.mts`); without it the flow is
+unchanged.
+
+**Still ahead:** the real **multi-agent MECE** simulation engine (today `SPEC_SYSTEM`
+only *role-plays* a 4-expert team in one prompt), automated multi-store scraping,
+price-history + availability monitoring, advanced analytics, full Arabic/English
+bilingual UI, browser extension, mobile app.
 
 ---
 

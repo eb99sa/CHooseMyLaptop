@@ -60,6 +60,7 @@ function mergeTarget(base: SpecTarget, raw: Partial<SpecTarget> | undefined): Sp
 async function getSpecRecommendation(
   basic: BasicNeeds,
   answers: UserAnswer[],
+  grounding?: string,
 ): Promise<SpecRecommendation> {
   const fallback = fallbackSpecRecommendation(basic);
   if (!isAiConfigured()) return fallback;
@@ -67,7 +68,7 @@ async function getSpecRecommendation(
   try {
     const raw = await chatJson<Partial<SpecRecommendation>>({
       system: SPEC_SYSTEM,
-      user: buildSpecUserPrompt(basic, answers),
+      user: buildSpecUserPrompt(basic, answers, grounding),
       temperature: 0.3,
       maxTokens: 1800,
     });
@@ -178,8 +179,9 @@ export async function buildRecommendation(
   basic: BasicNeeds,
   answers: UserAnswer[],
   listings: LaptopListing[],
+  grounding?: string,
 ): Promise<FinalReport> {
-  const spec = await getSpecRecommendation(basic, answers);
+  const spec = await getSpecRecommendation(basic, answers, grounding);
   const scored = rankLaptops(listings, spec, basic);
   const picks = pickRecommendations(scored, basic);
 

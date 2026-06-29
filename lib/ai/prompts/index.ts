@@ -4,7 +4,7 @@ import { USE_CASE_LABELS } from "@/lib/i18n";
 
 // Versioned prompts. Bump PROMPT_VERSION when changing any prompt so outputs
 // stay traceable. Keep prompts here (not inline) for inspectability.
-export const PROMPT_VERSION = "2026-06-25.v1";
+export const PROMPT_VERSION = "2026-06-29.v2";
 
 // ---------------------------------------------------------------------------
 // 1) Follow-up question generation (after Page 1)
@@ -66,6 +66,7 @@ export const SPEC_SYSTEM = `أنت فريق خبراء مكوّن من: (1) مح
 - إذا توفّر موقع المستخدم (المنطقة/الدولة) فراعِ العملة المحلية والأسعار والتوفر والضمان المحلي. إذا لم يتوفّر الموقع فقدّم المواصفات ونطاق سعر عادل ونصائح عامة فقط.
 - لا تدّعِ معرفة التوفر المحلي أو أسماء متاجر بعينها إن لم تتوفّر لديك بيانات؛ وضّح أن اقتراح المتاجر القريبة يتطلب تحديد الموقع.
 - حدّد نطاق سعر عادل، وما هو السعر المنخفض المريب والسعر المبالغ فيه.
+- إذا زوّدناك بمقاطع «من قاعدة معرفة الشراء» فاستند إليها كمرجع استرشادي عند صياغة الاحتياج والمواصفات، دون نسخها حرفياً ودون اختراع أسعار أو توفّر محلي منها.
 - cpu_tier من 1 إلى 10 (1 ضعيف جداً، 10 الأقوى). gpu أحد: integrated / entry_dedicated / mid_dedicated / high_dedicated.
 
 أعد JSON فقط بهذا الشكل:
@@ -81,7 +82,11 @@ export const SPEC_SYSTEM = `أنت فريق خبراء مكوّن من: (1) مح
   "notes": "ملاحظات اختيارية بالعربية"
 }`;
 
-export function buildSpecUserPrompt(basic: BasicNeeds, answers: UserAnswer[]): string {
+export function buildSpecUserPrompt(
+  basic: BasicNeeds,
+  answers: UserAnswer[],
+  grounding?: string,
+): string {
   const useCaseAr = USE_CASE_LABELS[basic.primary_use_case] ?? basic.primary_use_case;
   const baseline = USE_CASE_BASELINES[basic.primary_use_case];
   const answersText = answers.length
@@ -94,6 +99,10 @@ export function buildSpecUserPrompt(basic: BasicNeeds, answers: UserAnswer[]): s
     basic.location_source === "skipped" || (!basic.country && !basic.city_or_area)
       ? "(لم يحدّد المستخدم موقعه — لا تقترح متاجر قريبة)"
       : [basic.city_or_area, basic.country].filter(Boolean).join("، ");
+  const groundingText =
+    grounding && grounding.trim()
+      ? `\n\nمن قاعدة معرفة الشراء (استرشادي، لا تنسخه حرفياً):\n${grounding.trim()}\n`
+      : "";
   return `الاستخدام الرئيسي: ${useCaseAr}
 الميزانية: ${basic.budget_min}–${basic.budget_max} ${basic.currency}
 المنطقة/الدولة: ${locationAr}
@@ -107,7 +116,7 @@ ${answersText}
 للاسترشاد فقط، هذه مواصفات مرجعية معتادة لهذا الاستخدام (لا تلتزم بها حرفياً، عدّلها حسب الإجابات والميزانية):
 - الحد الأدنى المرجعي: ${baseline.minimum.cpu_class}، رام ${baseline.minimum.ram_gb}GB، تخزين ${baseline.minimum.storage_gb}GB ${baseline.minimum.storage_type}.
 - المثالي المرجعي: ${baseline.ideal.cpu_class}، رام ${baseline.ideal.ram_gb}GB، تخزين ${baseline.ideal.storage_gb}GB ${baseline.ideal.storage_type}.
-
+${groundingText}
 أعطِ المواصفات المناسبة ضمن الميزانية، مع نطاق سعر عادل بعملة ${basic.currency}.`;
 }
 

@@ -7,6 +7,7 @@ import type {
 } from "@/lib/types";
 import { generateFollowUpQuestions } from "@/lib/ai/questions";
 import { buildRecommendation } from "@/lib/ai/recommend";
+import { buildRetrievalQuery, formatGrounding, retrieveKnowledge } from "@/lib/ai/rag/retrieve";
 import { fetchAllListings } from "@/lib/data/listings";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
@@ -157,11 +158,19 @@ export async function runRecommendation(
     ? session.answers_json
     : [];
 
-  const listings = await fetchAllListings(supabase, { country: basic.country });
+  // Fetch the catalog and retrieve RAG grounding CONCURRENTLY — neither depends
+  // on the other, so the added embeddings call doesn't lengthen the critical
+  // path (which already budgets two sequential OpenRouter calls under a 60s
+  // route). Grounding is "" when embeddings/corpus aren't configured, so the
+  // pipeline behaves exactly as before in that case.
+  const [listings, grounding] = await Promise.all([
+    fetchAllListings(supabase, { country: basic.country }),
+    retrieveKnowledge(supabase, buildRetrievalQuery(basic, answers)).then(formatGrounding),
+  ]);
 
   let report: FinalReport;
   try {
-    report = await buildRecommendation(basic, answers, listings);
+    report = await buildRecommendation(basic, answers, listings, grounding);
   } catch (err) {
     await supabase.from(TABLE).update({ status: "failed" }).eq("id", session.id);
     await logEvent(supabase, session.id, "recommendation_failed", {
