@@ -8,6 +8,12 @@
 -- additive; re-running it is safe (create or replace).
 -- ===========================================================================
 
+-- Existing databases may carry an oversized ivfflat index from an earlier
+-- schema.sql (lists=100) that cripples recall on the small curated corpus — under
+-- the default probes=1 it returns ~0-1 of N rows. Drop it; exact KNN (seq-scan) is
+-- accurate and fast at this scale. See the note in schema.sql.
+drop index if exists public.idx_embeddings_vector;
+
 create or replace function public.match_knowledge(
   query_embedding   vector(1536),
   match_count       int default 6,
