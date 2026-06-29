@@ -230,6 +230,7 @@ export function looksLikeLaptop(title: string, cpu_tier: number, productType = "
 export function guessBrand(title: string): string {
   const brands = ["apple", "lenovo", "hp", "dell", "asus", "acer", "msi", "microsoft", "samsung", "huawei", "lg", "gigabyte", "razer", "honor"];
   const t = title.toLowerCase();
+  if (/\bmacbook\b|\bimac\b/.test(t)) return "Apple";
   for (const b of brands) if (t.includes(b)) return b.charAt(0).toUpperCase() + b.slice(1);
   return title.trim().split(/\s+/)[0] ?? "";
 }

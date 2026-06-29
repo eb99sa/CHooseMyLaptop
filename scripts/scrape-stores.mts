@@ -27,10 +27,12 @@ import type { StoreAdapter } from "@/lib/scrape/types";
 import { pckuwaitAdapter } from "@/lib/scrape/sources/pckuwait";
 import { wibiAdapter } from "@/lib/scrape/sources/wibi";
 import { xciteAdapter } from "@/lib/scrape/sources/xcite";
+import { nextAdapter } from "@/lib/scrape/sources/next";
 import { replaceSourceListings } from "@/lib/scrape/upsert";
 import { createServiceClient, isDbConfigured } from "@/lib/supabase/service";
 
-const ADAPTERS: StoreAdapter[] = [pckuwaitAdapter, wibiAdapter, xciteAdapter];
+// `next` is geo-blocked to non-Kuwait IPs — it only yields data when run from Kuwait.
+const ADAPTERS: StoreAdapter[] = [pckuwaitAdapter, wibiAdapter, xciteAdapter, nextAdapter];
 
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
