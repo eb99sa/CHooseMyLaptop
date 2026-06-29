@@ -121,17 +121,33 @@ In the Supabase **SQL Editor**, run **in order**:
    account-based tables if migrating).
 2. `supabase/rls.sql` — enables RLS with **no public policies** (deny-by-default;
    the server uses the service role, which bypasses RLS).
-3. `supabase/seed.sql` — ~20 **sample** laptop listings (estimated; replace with
-   verified data for production).
+3. `supabase/seed.sql` — ~20 **sample** laptop listings, kept as **benchmark/test
+   data** (they're labelled «بيانات تجريبية» wherever they appear in a report). Real
+   data comes from the ingest scripts below.
 
-### 5. Run
+### 5. Ingest real data (optional)
+Offline scripts — server-side only, never on the request path:
+
+- **Store catalog** → scrape the supported Kuwaiti stores into `laptop_listings`:
+  ```bash
+  npm run scrape                 # all sources (PCKuwait, Wibi, X-cite)
+  npm run scrape -- --dry-run    # fetch + parse only, no DB write
+  npm run scrape -- --source=pckuwait
+  ```
+  Re-running a source **replaces its rows**; the seed + other sources stay untouched.
+- **Knowledge corpus (RAG)** → set `OPENAI_API_KEY`, run `supabase/rag.sql`, then:
+  ```bash
+  npm run ingest-knowledge
+  ```
+
+### 6. Run
 ```bash
 npm run dev      # http://localhost:3000
 npm run build
 npm run start
 ```
 
-### 6. Admin
+### 7. Admin
 Visit `/admin/login` and enter `ADMIN_PASSWORD`. A signed, HTTP-only cookie is set
 and the proxy guards all `/admin/*` and `/api/admin/*` routes.
 

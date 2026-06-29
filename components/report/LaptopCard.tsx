@@ -5,6 +5,7 @@ import { PriceTag } from "@/components/ui/PriceTag";
 import { Icon } from "@/components/ui/Icon";
 import { SpecSignal } from "@/components/report/SpecSignal";
 import { TrustBadge } from "@/components/report/TrustBadge";
+import { UI } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface LaptopCardProps {
@@ -31,6 +32,11 @@ export function LaptopCard({ scored, highlight = false, badgeLabel }: LaptopCard
           {badgeLabel && (
             <Badge tone={highlight ? "signal" : "neutral"} className="mb-1">
               {badgeLabel}
+            </Badge>
+          )}
+          {listing.source_type === "seed" && (
+            <Badge tone="warning" className="mb-1 ms-1">
+              {UI.sampleBadge}
             </Badge>
           )}
           <h3 className="text-base font-bold leading-snug text-[var(--color-ink)]">
