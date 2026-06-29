@@ -40,8 +40,13 @@ export default async function ReportPage({ params }: PageProps) {
   }
 
   const { spec, scored } = report;
-  const hasSeed = scored.some((s) => s.listing.source_type === "seed");
-  const isEstimated = report.source === "fallback" || hasSeed;
+  // Seed rows are benchmark/test data; flag the whole report as estimated only when a
+  // recommended PICK rests on seed (or the AI was unavailable). Individual seed cards
+  // are labelled «بيانات تجريبية» regardless (see LaptopCard).
+  const seedPick = [report.best_overall, report.best_budget, report.best_value, report.avoid].some(
+    (p) => p?.listing.source_type === "seed",
+  );
+  const isEstimated = report.source === "fallback" || seedPick;
   const locationSkipped = session.location_source === "skipped";
 
   // Curated picks, de-duplicated by listing id so the same laptop is never

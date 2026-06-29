@@ -149,6 +149,7 @@ export const UI = {
   roiScore: "القيمة (ROI)",
   finalScore: "التقييم الكلي",
   estimatedBadge: "بيانات تقديرية",
+  sampleBadge: "بيانات تجريبية",
   estimatedNote:
     "بعض البيانات تقديرية وليست أسعاراً مباشرة من المتاجر. تأكّد من السعر والتوفر قبل الشراء.",
   compare: "قارن الأجهزة",
