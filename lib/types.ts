@@ -145,6 +145,7 @@ export interface LaptopSpecs {
   display_inch: number;
   display_resolution: string; // e.g. "1920x1080"
   display_panel: string; // IPS | TN | OLED | VA
+  display_refresh_hz?: number; // Hz; optional — drives the gaming refresh bonus
   battery_hours: number;
   weight_kg: number;
   os: string;
@@ -186,6 +187,32 @@ export interface ScoreBreakdown {
   display_comfort: number;
   upgradeability: number;
   local_availability: number;
+  // --- Additive (rubric v2). Optional so older persisted reports stay valid. ---
+  // Per-dimension data confidence in 0.5..1.0 (1.0 = fully known).
+  dim_confidence?: Partial<Record<RubricDimension, number>>;
+}
+
+// The seven weighted scoring dimensions (the keys of ScoreBreakdown that feed
+// final_score). Used for typed per-use-case weight profiles.
+export type RubricDimension =
+  | "use_case_fit"
+  | "price_performance"
+  | "build_reliability"
+  | "battery_portability"
+  | "display_comfort"
+  | "upgradeability"
+  | "local_availability";
+
+// A weight profile over the seven dimensions (should sum to ~1.0; normalized at
+// runtime to guard float drift).
+export type RubricWeights = Record<RubricDimension, number>;
+
+// One sub-engine's output: a 0..100 score plus how confident we are in the data
+// it rests on (0.5..1.0). Confidence never inflates the score — it is surfaced
+// separately so sparse-but-flattering data can't out-rank rich-but-honest data.
+export interface DimensionResult {
+  score: number; // 0..100
+  confidence: number; // 0.5..1.0
 }
 
 export interface ScoredLaptop {
@@ -196,6 +223,10 @@ export interface ScoredLaptop {
   final_score: number; // 0..100 — rubric-weighted overall
   reasons: string[]; // Arabic
   warnings: string[]; // Arabic
+  // --- Additive (rubric v2). Optional so older persisted reports stay valid. ---
+  data_confidence?: number; // 0..100, use-case-weighted avg of dim confidence
+  low_confidence_dims?: RubricDimension[]; // dims resting on uncertain data
+  dimension_reasons?: Partial<Record<RubricDimension, string>>; // Arabic, per-dim
 }
 
 export type RecommendationType =

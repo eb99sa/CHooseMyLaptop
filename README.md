@@ -21,7 +21,8 @@ recommendation report in simple Arabic.
 
 ## ✨ What the MVP does
 
-1. **Landing page** explaining the value, with a subtle 3D laptop visual. No sign-up.
+1. **Landing page** explaining the value, with an **interactive WebGL chrome-laptop
+   hero** that gracefully falls back to a static CSS chrome object. No sign-up.
 2. **Anonymous two-step needs flow**
    - Page 1 — structured basic needs (budget, use case, portability, …) plus an
      optional, non-intrusive **location** section.
@@ -67,13 +68,13 @@ labels the output as *estimated* (`بيانات تقديرية`).
 | Layer        | Choice                                                       |
 |--------------|-------------------------------------------------------------|
 | Framework    | Next.js 16 (App Router) + TypeScript                        |
-| Styling      | Tailwind CSS v4 (Arabic RTL, custom design tokens)          |
+| Styling      | Tailwind CSS v4 (RTL, "Chrome Spec Navigator" tokens, IBM Plex) |
 | Database     | Supabase Postgres — **server-only access** via service role |
 | AI provider  | OpenRouter (configurable model) + deterministic fallback    |
 | Geocoding    | Mapbox (server-proxied) — optional, degrades gracefully     |
 | Vectors      | Supabase `pgvector` (schema scaffolded; used in Phase 2)    |
 | Charts       | Recharts                                                    |
-| 3D           | three.js + React Three Fiber + drei (subtle, lazy-loaded)   |
+| 3D           | three.js + R3F + drei — interactive chrome hero, **zero runtime network deps**, static fallback |
 | Deploy       | Vercel                                                      |
 
 ---
@@ -101,7 +102,14 @@ Variables:
   (the browser never talks to Supabase directly). Project Settings → API →
   `service_role` (secret).
 - `OPENROUTER_API_KEY` (optional) + `OPENROUTER_MODEL` (default
-  `anthropic/claude-3.5-sonnet`).
+  `openai/gpt-4o-mini`; any current OpenRouter slug that supports JSON output).
+- `OPENROUTER_SYNTH_MODEL` (optional) — stronger model for the multi-agent
+  synthesizer (workers use `OPENROUTER_MODEL`); defaults to `OPENROUTER_MODEL`.
+  Set `OPENROUTER_MULTI_AGENT=false` to revert to the legacy single-call spec path.
+- `OPENAI_API_KEY` (optional) — enables Phase 2 **RAG** retrieval (embeddings via
+  `text-embedding-3-small`). Without it, retrieval is skipped and the flow is
+  unchanged. After setting it, run `supabase/rag.sql` then
+  `npx tsx scripts/ingest-knowledge.mts`.
 - `MAPBOX_TOKEN` (optional) — enables location search + reverse geocode; if empty,
   the location section falls back to a plain manual text field.
 - `ADMIN_PASSWORD` + `ADMIN_SESSION_SECRET` — gate the `/admin` area.
@@ -157,6 +165,46 @@ Prompts are versioned in `lib/ai/prompts/index.ts` (`PROMPT_VERSION`).
 
 ---
 
+## 🎨 Design system — Chrome Spec Navigator
+
+The UI follows one design contract: **Chrome Spec Navigator** — *Apple-keynote
+restraint + chrome hardware demo + thin laser-grid techno*. It's a light,
+near-monochrome system where color lives almost entirely in the 3D scene.
+
+- **Canvas & ink** — cold-mist page (`--color-canvas #f1f2f3`), white cards, carbon
+  ink (`#111`). **There is no brand hue:** `--color-brand-600` resolves to carbon, so
+  the single primary CTA per view is black, never colored.
+- **One restrained accent** — neon **scene-cyan** (`--scene-cyan #35e0d8`), confined to
+  the WebGL/CSS scene plus tiny state dots and the focus ring. Never a fill or a CTA.
+- **Type** — IBM Plex Sans Arabic (UI; weights 400–700, never thin) + IBM Plex Mono
+  (Latin micro-labels, uppercase). Never letter-space Arabic.
+- **Shape** — sharp radii for technical UI (4 / 8 / 14 / 20 px); **pill only** for the
+  primary CTA and status badges. Soft, cool, low-contrast elevation.
+- **RTL-first** — documents are `dir="rtl" lang="ar"`; layout mirrors via logical
+  properties; Latin spec codes and KWD prices are isolated (`dir="ltr"` /
+  `unicode-bidi: plaintext`). Copy is plain Kuwaiti Arabic — *you* (user) / *we* (product).
+
+**Tokens** live in `app/globals.css` (a `@theme` block + a `:root` token foundation) —
+use the token vars, never hard-coded hexes. The full contract (principles, every token,
+component specs, scene rules) is **[`ds-bundle/design.md`](ds-bundle/design.md)**, the
+source of truth.
+
+**Component families** (`components/`):
+- `ui/` — Button, Icon, Badge, OptionChip, QuestionCard, FitScore, PriceTag, ScoreBar,
+  ProgressSteps, NarrowingLoader, StateView, Logo, Card, Field, SiteHeader.
+- `report/` — LaptopCard, SpecSignal, TrustBadge, ExplainPanel, SpecBlock.
+- `landing/` — HeroScene → ChromeScene → ChromeLaptop (the interactive WebGL chrome
+  laptop: R3F + drei, primitives + a procedural Lightformer studio env, **zero runtime
+  network deps**), with HeroChrome — a static CSS chrome fallback for SSR /
+  `prefers-reduced-motion` / touch / no-WebGL.
+
+> The app does **not** import `ds-bundle/` at runtime — it has its own React
+> `components/`. Apply the system by copying token values + intent, and prefer Tailwind
+> utilities + token vars over porting `ds-bundle` `.class` CSS (a Tailwind-v4 /
+> Lightning-CSS quirk silently drops some hand-ported blocks).
+
+---
+
 ## 🗂️ Project structure
 
 ```
@@ -204,11 +252,22 @@ supabase/
 
 ---
 
-## 🛣️ Phase 2 (not in this build)
-Automated multi-store scraping, full RAG with vector search, price-history
-tracking, availability monitoring, university/major research automation, the
-multi-agent MECE simulation engine, advanced analytics, price-drop alerts, full
-Arabic/English bilingual UI, browser extension, mobile app.
+## 🛣️ Phase 2 (in progress)
+**Shipped:**
+- An upgraded, use-case-aware scoring **rubric** (`lib/rubric.ts`).
+- A **RAG** retrieval layer — a curated Arabic knowledge corpus (`lib/ai/rag/corpus.ts`)
+  embedded into `pgvector` and retrieved via `match_knowledge` (`supabase/rag.sql`) to
+  ground the spec recommendation. Off until `OPENAI_API_KEY` is set and the corpus is
+  ingested (`npx tsx scripts/ingest-knowledge.mts`); without it the flow is unchanged.
+- A real **multi-agent MECE** spec engine (`lib/ai/agents.ts`) — four parallel
+  specialist workers (needs / hardware / ROI / contrarian) reconciled by one stronger
+  synthesizer that also writes the narrative, all within the 60s route and degrading to
+  the deterministic fallback at every tier. Tiered via `OPENROUTER_SYNTH_MODEL`;
+  kill-switch `OPENROUTER_MULTI_AGENT=false`.
+
+**Still ahead:** automated multi-store scraping, price-history + availability
+monitoring, advanced analytics, full Arabic/English bilingual UI, browser extension,
+mobile app.
 
 ---
 

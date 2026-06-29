@@ -125,8 +125,12 @@ create table if not exists public.knowledge_embeddings (
   metadata_json jsonb,
   created_at    timestamptz not null default now()
 );
-create index if not exists idx_embeddings_vector
-  on public.knowledge_embeddings using ivfflat (embedding vector_cosine_ops) with (lists = 100);
+-- NOTE: intentionally NO ANN (ivfflat/hnsw) index here. The curated knowledge
+-- corpus is small (tens to low-hundreds of chunks); an ivfflat index with
+-- lists=100 on a tiny table returns almost nothing under the default probes=1
+-- (each cluster holds ~0-1 vectors), which silently cripples retrieval. Exact KNN
+-- via seq-scan is accurate and sub-millisecond at this scale + this app's low QPS.
+-- Add a tuned HNSW index only if the corpus ever grows to many thousands of chunks.
 
 -- ---------------------------------------------------------------------------
 -- admin_analytics_events (anonymous; references the anonymous session only)

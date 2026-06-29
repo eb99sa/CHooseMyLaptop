@@ -22,15 +22,26 @@ interface ChatOptions {
   user: string;
   temperature?: number;
   maxTokens?: number;
+  /** Override the model for this call (e.g. the strong synthesizer tier). */
+  model?: string;
+  /** Per-call abort timeout in ms (default 25_000). */
+  timeoutMs?: number;
 }
 
-async function chat({ system, user, temperature = 0.4, maxTokens = 2000 }: ChatOptions): Promise<string> {
+async function chat({
+  system,
+  user,
+  temperature = 0.4,
+  maxTokens = 2000,
+  model: modelOverride,
+  timeoutMs = 25_000,
+}: ChatOptions): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     throw new OpenRouterUnavailable("OPENROUTER_API_KEY is not set");
   }
 
-  const model = process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
+  const model = modelOverride || process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
 
   let res: Response;
   try {
@@ -52,10 +63,10 @@ async function chat({ system, user, temperature = 0.4, maxTokens = 2000 }: ChatO
           { role: "user", content: user },
         ],
       }),
-      // Keep each call well under the 60s route budget; the recommend pipeline
-      // makes up to two sequential calls (spec + narrative), so 25s x2 < 60s
-      // leaves room for the graceful fallback to run instead of a hard timeout.
-      signal: AbortSignal.timeout(25_000),
+      // Keep each call well under the 60s route budget. Callers tune timeoutMs:
+      // the multi-agent path uses 16s workers (parallel) + a 22s synthesizer so
+      // even a full timeout of both stages leaves room for graceful fallback.
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (err) {
     throw new OpenRouterUnavailable(`OpenRouter request failed: ${(err as Error).message}`);
