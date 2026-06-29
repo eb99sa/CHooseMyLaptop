@@ -1,70 +1,46 @@
-// X-cite adapter — Kuwait's largest electronics retailer (Next.js). No browser
-// needed: each product page embeds the full product as JSON in __NEXT_DATA__, and
-// robots.txt permits product pages. Laptop URLs are enumerated from the PDP sitemap.
+// X-cite adapter — Kuwait's largest electronics retailer. Its storefront search is
+// powered by Algolia via an open proxy (POST /api/algolia/proxy) that answers plain
+// HTTP — no browser, no sitemap crawl. We query the laptops category index and
+// paginate. The category is passed as the Algolia `query` (that's how X-cite does it).
 
 import type { NormalizedListing, StoreAdapter } from "@/lib/scrape/types";
-import { ACCESSORY_RE, decodeEntities, guessBrand, looksLikeLaptop, normalizeSpecs } from "@/lib/scrape/specs";
-import { enumerateSitemap, fetchText } from "@/lib/scrape/sitemap";
+import { decodeEntities, guessBrand, looksLikeLaptop, normalizeSpecs } from "@/lib/scrape/specs";
 
-const PDP_SITEMAP = "https://www.xcite.com/sitemaps/sitemap-pdps.xml";
-const LAPTOP_SLUG =
-  /(laptop|macbook|thinkpad|ideapad|vivobook|nitro|legion|inspiron|pavilion|zenbook|rog-|tuf-|aspire|probook|elitebook|loq|gram|swift|omen|victus|katana|cyborg|expertbook|chromebook|galaxy-book)/i;
+const PROXY = "https://www.xcite.com/api/algolia/proxy";
+const INDEX = "xcite_prod_kw_en_main";
+const LAPTOP_CATEGORY_ID = "6290bd82-7efb-4e77-a6b9-3e4334a3db35"; // /laptops/c
 
-const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
-const asStr = (v: unknown): string => (typeof v === "string" ? v : "");
-const asNum = (v: unknown): number | null => (typeof v === "number" && !Number.isNaN(v) ? v : null);
-
-/** Recursively find the product node: an object with name + price.value + sku. */
-function findProduct(node: unknown, depth = 0): Record<string, unknown> | null {
-  if (depth > 8 || !isObj(node)) return null;
-  const price = node.price;
-  if (typeof node.name === "string" && isObj(price) && asNum(price.value) !== null && "sku" in node) {
-    return node;
-  }
-  for (const key of Object.keys(node)) {
-    const found = findProduct(node[key], depth + 1);
-    if (found) return found;
-  }
-  return null;
+interface XciteHit {
+  objectType?: string;
+  name?: string;
+  slug?: string;
+  price?: number;
+  currency?: string;
+  ctId?: string;
+  inStock?: boolean;
+  stockStatus?: string;
+  availability?: string;
+  averageRating?: number;
+  rating?: number;
+  reviewsCount?: number;
 }
 
-function mapPdp(html: string, url: string): NormalizedListing | null {
-  const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-  if (!m) return null;
-  let data: unknown;
-  try {
-    data = JSON.parse(m[1]);
-  } catch {
-    return null;
-  }
-  const p = findProduct(data);
-  if (!p) return null;
+function mapHit(h: XciteHit): NormalizedListing | null {
+  if (h.objectType && h.objectType !== "product") return null;
+  const title = decodeEntities(h.name ?? "");
+  const price = typeof h.price === "number" ? h.price : NaN;
+  if (!title || !Number.isFinite(price) || price <= 0) return null;
 
-  const title = decodeEntities(asStr(p.name));
-  const price = isObj(p.price) ? asNum(p.price.value) : null;
-  if (!title || price === null || price <= 0) return null;
+  const brand = guessBrand(title);
+  const specs = normalizeSpecs({ title, brand });
+  if (!looksLikeLaptop(title, specs.cpu_tier)) return null;
 
-  const status = asStr(p.status).toLowerCase().replace(/[\s_]/g, "");
-  const availability = status.includes("instock")
-    ? "in_stock"
-    : status.includes("outofstock")
-      ? "out_of_stock"
-      : "unknown";
-
-  const attributes: Record<string, string> = {};
-  const specs = isObj(p.specifications) ? p.specifications.attributes : p.attributes;
-  if (Array.isArray(specs)) {
-    for (const a of specs) if (isObj(a) && a.label) attributes[asStr(a.label)] = asStr(a.value);
-  }
-  const brand = attributes["Brand"] || guessBrand(title);
-  const normalized = normalizeSpecs({ title, brand, attributes });
-  if (!looksLikeLaptop(title, normalized.cpu_tier)) return null;
-
-  const rating = isObj(p.rating) ? asNum(p.rating.average) : asNum(p.rating);
-  const reviewCount = isObj(p.rating) ? asNum(p.rating.count) : null;
+  const status = `${h.stockStatus ?? ""}${h.availability ?? ""}`.toLowerCase();
+  const availability = h.inStock === false || status.includes("out") ? "out_of_stock" : "in_stock";
+  const rating = typeof h.averageRating === "number" ? h.averageRating : typeof h.rating === "number" ? h.rating : null;
 
   return {
-    external_id: asStr(p.sku) || url,
+    external_id: h.ctId || h.slug || title,
     source_type: "xcite",
     store_name: "X-cite",
     product_title: title,
@@ -73,13 +49,13 @@ function mapPdp(html: string, url: string): NormalizedListing | null {
     price: Math.round(price * 1000) / 1000,
     currency: "KWD",
     availability,
-    url,
-    image_url: isObj(p.media) && Array.isArray(p.media) && isObj(p.media[0]) ? asStr((p.media[0] as Record<string, unknown>).url) || null : null,
+    url: h.slug ? `https://www.xcite.com/${h.slug}/p` : null,
+    image_url: null,
     country: "Kuwait",
     city_or_area: null,
-    rating,
-    review_count: reviewCount,
-    specs: normalized,
+    rating: rating && rating > 0 ? rating : null,
+    review_count: typeof h.reviewsCount === "number" && h.reviewsCount > 0 ? h.reviewsCount : null,
+    specs,
   };
 }
 
@@ -87,18 +63,45 @@ export const xciteAdapter: StoreAdapter = {
   key: "xcite",
   store_name: "X-cite",
   async fetchListings(): Promise<NormalizedListing[]> {
-    const urls = (
-      await enumerateSitemap(PDP_SITEMAP, { filter: LAPTOP_SLUG, maxSubSitemaps: 12, maxUrls: 120 })
-    ).filter((u) => !ACCESSORY_RE.test(u)); // skip "laptop-bag"/"-stand"/etc. before fetching
     const out: NormalizedListing[] = [];
-    for (const url of urls) {
-      const html = await fetchText(url, 25_000);
-      if (html) {
-        const n = mapPdp(html, url);
-        if (n) out.push(n);
+    for (let page = 0; page < 12; page++) {
+      const body = JSON.stringify({
+        requests: [
+          {
+            indexName: INDEX,
+            params: { hitsPerPage: 100, page, query: LAPTOP_CATEGORY_ID, facets: ["*"], maxValuesPerFacet: 1000 },
+          },
+        ],
+        operation: "search",
+      });
+      try {
+        const res = await fetch(PROXY, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126 Safari/537.36",
+          },
+          body,
+          signal: AbortSignal.timeout(20_000),
+        });
+        if (!res.ok) {
+          console.warn(`[xcite] page ${page} HTTP ${res.status}`);
+          break;
+        }
+        const data = (await res.json()) as { results?: Array<{ hits?: XciteHit[]; nbPages?: number }> };
+        const result = data.results?.[0];
+        for (const h of result?.hits ?? []) {
+          const n = mapHit(h);
+          if (n) out.push(n);
+        }
+        if (page + 1 >= (result?.nbPages ?? 1)) break;
+      } catch (err) {
+        console.warn(`[xcite] page ${page} failed:`, (err as Error).message);
+        break;
       }
-      await new Promise((r) => setTimeout(r, 400)); // polite delay between PDPs
     }
-    return out;
+    const seen = new Set<string>();
+    return out.filter((l) => (seen.has(l.external_id) ? false : (seen.add(l.external_id), true)));
   },
 };

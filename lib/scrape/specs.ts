@@ -49,7 +49,10 @@ export function cpuTier(text: string): { cpu: string; cpu_tier: number } {
   if (/\bi5\b|core\s*i?5|ultra\s*5/.test(t)) return { cpu: "Intel Core i5", cpu_tier: highPerf ? 7 : 6 };
   if (/\bi3\b|core\s*i?3|ultra\s*3/.test(t)) return { cpu: "Intel Core i3", cpu_tier: 4 };
   if (/celeron|pentium|\bn\d{3,4}\b|atom/.test(t)) return { cpu: "Intel Celeron/Pentium", cpu_tier: 2 };
-  // AMD Ryzen
+  // AMD Ryzen (incl. the new "Ryzen AI" Zen5 + NPU line)
+  if (/ryzen\s*ai\s*9/.test(t)) return { cpu: "AMD Ryzen AI 9", cpu_tier: 9 };
+  if (/ryzen\s*ai\s*7/.test(t)) return { cpu: "AMD Ryzen AI 7", cpu_tier: 8 };
+  if (/ryzen\s*ai\s*5/.test(t)) return { cpu: "AMD Ryzen AI 5", cpu_tier: 7 };
   if (/ryzen\s*9|\br9\b/.test(t)) return { cpu: "AMD Ryzen 9", cpu_tier: 9 };
   if (/ryzen\s*7|\br7\b/.test(t)) return { cpu: "AMD Ryzen 7", cpu_tier: highPerf ? 8 : 7 };
   if (/ryzen\s*5|\br5\b/.test(t)) return { cpu: "AMD Ryzen 5", cpu_tier: highPerf ? 7 : 6 };
