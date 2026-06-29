@@ -8,7 +8,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "scrape": "npx tsx scripts/scrape-stores.mts",
+    "ingest-knowledge": "npx tsx scripts/ingest-knowledge.mts",
+    "verify": "npx tsx scripts/verify-rubric.mts && npx tsx scripts/verify-rag.mts && npx tsx scripts/verify-agents.mts"
   },
   "dependencies": {
     "@react-three/drei": "^10.0.4",

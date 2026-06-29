@@ -215,9 +215,13 @@ export function decodeEntities(s: string): string {
 export const ACCESSORY_RE =
   /\b(bag|sleeve|case|charger|adapter|mouse|keyboard|dock|stand|cooling|cooler|warranty|protection|cable|hub|backpack|screen\s*protector|cleaning|stylus|power\s*bank|headset|webcam|sticker|skin|mousepad|mouse\s*pad)\b/i;
 
-/** Heuristic: does this look like an actual laptop (vs. an accessory)? */
+/** Non-laptop form factors that carry a CPU and otherwise slip through. */
+export const NON_LAPTOP_RE =
+  /(legion\s*go|rog\s*ally|steam\s*deck|mini[-\s]*pc|\bdesktop\b|all[-\s]?in[-\s]?one|\btablet\b|\bipad\b|\btab\s|smart\s*watch|\bphone\b|\bmonitor\b|projector|\bnuc\b|handheld|\bserver\b|\bgpu\b\s*card|graphics\s*card)/i;
+
+/** Heuristic: does this look like an actual laptop (vs. an accessory / other device)? */
 export function looksLikeLaptop(title: string, cpu_tier: number, productType = ""): boolean {
-  if (ACCESSORY_RE.test(title)) return false;
+  if (ACCESSORY_RE.test(title) || NON_LAPTOP_RE.test(title)) return false;
   if (/\b(laptop|notebook|macbook)\b/i.test(title) || /laptop/i.test(productType)) return true;
   return cpu_tier > 0; // a recognizable CPU is strong evidence it's a laptop
 }
