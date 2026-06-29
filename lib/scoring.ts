@@ -135,22 +135,31 @@ export function pickRecommendations(
   basic: BasicNeeds,
 ): RecommendationPicks {
   if (scored.length === 0) return {};
-  const withinBudget = scored.filter((s) => s.listing.price <= basic.budget_max);
-  const pool = withinBudget.length > 0 ? withinBudget : scored;
+  // Seed rows are benchmark/test data — never RECOMMEND them as a pick (they still
+  // appear, flagged, in the full ranked list). Fall back to them only if there is
+  // nothing real to recommend at all.
+  const real = scored.filter((s) => s.listing.source_type !== "seed");
+  const base = real.length > 0 ? real : scored;
+  const withinBudget = base.filter((s) => s.listing.price <= basic.budget_max);
+  const pool = withinBudget.length > 0 ? withinBudget : base;
 
-  const best_overall = [...pool].sort((a, b) => b.final_score - a.final_score)[0];
+  // Prefer a buyable (in-stock) machine for every headline pick — an out-of-stock
+  // laptop the user can't actually buy shouldn't be the recommendation.
+  const stock = (s: ScoredLaptop) => (s.listing.availability === "in_stock" ? 0 : 1);
+
+  const best_overall = [...pool].sort((a, b) => stock(a) - stock(b) || b.final_score - a.final_score)[0];
 
   const acceptable = pool.filter((s) => s.final_score >= 60 && s.warnings.length === 0);
   const budgetPool = acceptable.length > 0 ? acceptable : pool;
   const best_budget = [...budgetPool].sort(
-    (a, b) => a.listing.price - b.listing.price || b.final_score - a.final_score,
+    (a, b) => stock(a) - stock(b) || a.listing.price - b.listing.price || b.final_score - a.final_score,
   )[0];
 
   // best_value is roi-sorted, but only among reasonably-fitting machines so a
   // junk-cheap listing can't win purely on a favorable price ratio.
   const valuePool = pool.filter((s) => s.final_score >= SCORING_THRESHOLDS.BEST_VALUE_MIN_FINAL);
   const best_value = [...(valuePool.length > 0 ? valuePool : pool)].sort(
-    (a, b) => b.roi_score - a.roi_score,
+    (a, b) => stock(a) - stock(b) || b.roi_score - a.roi_score,
   )[0];
 
   // Worst candidate, surfaced only if it's genuinely weak AND it isn't already
@@ -160,7 +169,7 @@ export function pickRecommendations(
       .filter((p): p is ScoredLaptop => Boolean(p))
       .map((p) => p.listing.id),
   );
-  const worst = [...scored].sort((a, b) => a.final_score - b.final_score)[0];
+  const worst = [...base].sort((a, b) => a.final_score - b.final_score)[0];
   const avoid =
     worst &&
     !pickedIds.has(worst.listing.id) &&
