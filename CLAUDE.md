@@ -101,9 +101,15 @@ Sequence: **rubric → RAG → multi-agent MECE.**
   OpenRouter serves no embeddings. **OFF until `OPENAI_API_KEY` is set + `supabase/rag.sql`
   is run + the corpus is ingested**; until then retrieval returns `[]` and the flow is
   byte-identical to before. Verify the wiring: `npx tsx scripts/verify-rag.mts`.
-- **Multi-agent MECE — next.** Today `SPEC_SYSTEM` only *role-plays* a 4-expert team in
-  one prompt; make those real agents, with the hybrid/progressive execution model.
+- **Multi-agent MECE — done.** `lib/ai/agents.ts` runs 4 parallel cheap workers
+  (needs / hardware / ROI / contrarian) → `runDeterministicMerge` (the floor) → a stronger
+  synthesizer (`runSynthesizer` in `recommend.ts`) that refines the spec AND writes the
+  narrative, all synchronous within the 60s route. `lib/ai/merge.ts`
+  (`mergeTarget`/`num`/`sanitizePriceRange`/`mergeSpec`) is the NaN floor at every tier.
+  Tiered via `OPENROUTER_SYNTH_MODEL` (defaults to `OPENROUTER_MODEL`); kill-switch
+  `OPENROUTER_MULTI_AGENT=false` → legacy single-call path. Verify:
+  `npx tsx scripts/verify-agents.mts`.
 
 Invariants when extending: deterministic fallback for every AI call; server-only DB;
 keep `ScoredLaptop`/`FinalReport` backward-compatible; bump `PROMPT_VERSION` on any prompt
-change (now `2026-06-29.v2`).
+change (now `2026-06-29.v3`).

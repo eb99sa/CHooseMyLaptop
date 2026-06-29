@@ -103,6 +103,9 @@ Variables:
   `service_role` (secret).
 - `OPENROUTER_API_KEY` (optional) + `OPENROUTER_MODEL` (default
   `openai/gpt-4o-mini`; any current OpenRouter slug that supports JSON output).
+- `OPENROUTER_SYNTH_MODEL` (optional) — stronger model for the multi-agent
+  synthesizer (workers use `OPENROUTER_MODEL`); defaults to `OPENROUTER_MODEL`.
+  Set `OPENROUTER_MULTI_AGENT=false` to revert to the legacy single-call spec path.
 - `OPENAI_API_KEY` (optional) — enables Phase 2 **RAG** retrieval (embeddings via
   `text-embedding-3-small`). Without it, retrieval is skipped and the flow is
   unchanged. After setting it, run `supabase/rag.sql` then
@@ -250,17 +253,21 @@ supabase/
 ---
 
 ## 🛣️ Phase 2 (in progress)
-**Shipped:** an upgraded, use-case-aware scoring **rubric** (`lib/rubric.ts`) and a
-**RAG** retrieval layer — a curated Arabic knowledge corpus (`lib/ai/rag/corpus.ts`)
-embedded into `pgvector` and retrieved via `match_knowledge` (`supabase/rag.sql`) to
-ground the spec recommendation. RAG is **off until `OPENAI_API_KEY` is set** and the
-corpus is ingested (`npx tsx scripts/ingest-knowledge.mts`); without it the flow is
-unchanged.
+**Shipped:**
+- An upgraded, use-case-aware scoring **rubric** (`lib/rubric.ts`).
+- A **RAG** retrieval layer — a curated Arabic knowledge corpus (`lib/ai/rag/corpus.ts`)
+  embedded into `pgvector` and retrieved via `match_knowledge` (`supabase/rag.sql`) to
+  ground the spec recommendation. Off until `OPENAI_API_KEY` is set and the corpus is
+  ingested (`npx tsx scripts/ingest-knowledge.mts`); without it the flow is unchanged.
+- A real **multi-agent MECE** spec engine (`lib/ai/agents.ts`) — four parallel
+  specialist workers (needs / hardware / ROI / contrarian) reconciled by one stronger
+  synthesizer that also writes the narrative, all within the 60s route and degrading to
+  the deterministic fallback at every tier. Tiered via `OPENROUTER_SYNTH_MODEL`;
+  kill-switch `OPENROUTER_MULTI_AGENT=false`.
 
-**Still ahead:** the real **multi-agent MECE** simulation engine (today `SPEC_SYSTEM`
-only *role-plays* a 4-expert team in one prompt), automated multi-store scraping,
-price-history + availability monitoring, advanced analytics, full Arabic/English
-bilingual UI, browser extension, mobile app.
+**Still ahead:** automated multi-store scraping, price-history + availability
+monitoring, advanced analytics, full Arabic/English bilingual UI, browser extension,
+mobile app.
 
 ---
 
