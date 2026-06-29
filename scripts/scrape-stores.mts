@@ -28,12 +28,13 @@ import { pckuwaitAdapter } from "@/lib/scrape/sources/pckuwait";
 import { wibiAdapter } from "@/lib/scrape/sources/wibi";
 import { xciteAdapter } from "@/lib/scrape/sources/xcite";
 import { nextAdapter } from "@/lib/scrape/sources/next";
+import { bestAdapter } from "@/lib/scrape/sources/best";
 import { replaceSourceListings } from "@/lib/scrape/upsert";
 import { closeBrowser } from "@/lib/scrape/headless";
 import { createServiceClient, isDbConfigured } from "@/lib/supabase/service";
 
-// `next` is geo-blocked to non-Kuwait IPs — it only yields data when run from Kuwait.
-const ADAPTERS: StoreAdapter[] = [pckuwaitAdapter, wibiAdapter, xciteAdapter, nextAdapter];
+// `next` uses a headless browser (Cloudflare) and is best run from a Kuwaiti IP.
+const ADAPTERS: StoreAdapter[] = [pckuwaitAdapter, wibiAdapter, xciteAdapter, bestAdapter, nextAdapter];
 
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
