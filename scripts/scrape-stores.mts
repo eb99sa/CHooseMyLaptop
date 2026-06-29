@@ -27,10 +27,14 @@ import type { StoreAdapter } from "@/lib/scrape/types";
 import { pckuwaitAdapter } from "@/lib/scrape/sources/pckuwait";
 import { wibiAdapter } from "@/lib/scrape/sources/wibi";
 import { xciteAdapter } from "@/lib/scrape/sources/xcite";
+import { nextAdapter } from "@/lib/scrape/sources/next";
+import { bestAdapter } from "@/lib/scrape/sources/best";
 import { replaceSourceListings } from "@/lib/scrape/upsert";
+import { closeBrowser } from "@/lib/scrape/headless";
 import { createServiceClient, isDbConfigured } from "@/lib/supabase/service";
 
-const ADAPTERS: StoreAdapter[] = [pckuwaitAdapter, wibiAdapter, xciteAdapter];
+// `next` uses a headless browser (Cloudflare) and is best run from a Kuwaiti IP.
+const ADAPTERS: StoreAdapter[] = [pckuwaitAdapter, wibiAdapter, xciteAdapter, bestAdapter, nextAdapter];
 
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
@@ -62,4 +66,5 @@ for (const adapter of selected) {
   }
 }
 
+await closeBrowser(); // shut down the headless browser if any adapter used it
 console.log(`\n${dryRun ? "[dry-run] no DB writes." : `[scrape] done: ${total} rows written.`}`);
