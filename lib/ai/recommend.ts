@@ -40,6 +40,11 @@ function multiAgentEnabled(): boolean {
 
 type ReportCore = Omit<FinalReport, "narrative" | "source">;
 
+// Picks are computed over the FULL ranked pool, but only the top N are stored /
+// rendered as cards — the catalog can now hold hundreds of scraped listings and a
+// report with hundreds of cards would be unusable.
+const SCORED_LIMIT = 48;
+
 function coreFrom(spec: SpecRecommendation, listings: LaptopListing[], basic: BasicNeeds): {
   core: ReportCore;
   picks: RecommendationPicks;
@@ -49,7 +54,7 @@ function coreFrom(spec: SpecRecommendation, listings: LaptopListing[], basic: Ba
   return {
     core: {
       spec,
-      scored,
+      scored: scored.slice(0, SCORED_LIMIT),
       best_overall: picks.best_overall,
       best_budget: picks.best_budget,
       best_value: picks.best_value,
