@@ -16,6 +16,7 @@ import {
 } from "@/lib/ai/prompts";
 import {
   fallbackSpecRecommendation,
+  needsApplePlatform,
   pickRecommendations,
   rankLaptops,
   type RecommendationPicks,
@@ -45,12 +46,31 @@ type ReportCore = Omit<FinalReport, "narrative" | "source">;
 // report with hundreds of cards would be unusable.
 const SCORED_LIMIT = 48;
 
-function coreFrom(spec: SpecRecommendation, listings: LaptopListing[], basic: BasicNeeds): {
+// When the buyer needs Apple, make the spec honest about it so the displayed targets
+// and the narrative agree with the (Apple-gated) picks.
+function applyPlatform(spec: SpecRecommendation, requireApple: boolean): SpecRecommendation {
+  if (!requireApple || spec.spec_range.minimum.os === "macOS") return spec;
+  return {
+    ...spec,
+    spec_range: {
+      ...spec.spec_range,
+      minimum: { ...spec.spec_range.minimum, os: "macOS" },
+      ideal: { ...spec.spec_range.ideal, os: "macOS" },
+    },
+  };
+}
+
+function coreFrom(
+  spec: SpecRecommendation,
+  listings: LaptopListing[],
+  basic: BasicNeeds,
+  requireApple = false,
+): {
   core: ReportCore;
   picks: RecommendationPicks;
 } {
   const scored = rankLaptops(listings, spec, basic);
-  const picks = pickRecommendations(scored, basic);
+  const picks = pickRecommendations(scored, basic, { requireApple });
   return {
     core: {
       spec,
@@ -158,8 +178,9 @@ async function legacyBuild(
   listings: LaptopListing[],
   grounding?: string,
 ): Promise<FinalReport> {
-  const spec = await getSpecRecommendation(basic, answers, grounding);
-  const { core } = coreFrom(spec, listings, basic);
+  const requireApple = needsApplePlatform(basic, answers);
+  const spec = applyPlatform(await getSpecRecommendation(basic, answers, grounding), requireApple);
+  const { core } = coreFrom(spec, listings, basic, requireApple);
   const { narrative, fromAi } = await getNarrative(basic, spec, core);
   return { ...core, narrative, source: spec.source === "ai" || fromAi ? "ai" : "fallback" };
 }
@@ -199,25 +220,29 @@ async function multiAgentBuild(
   listings: LaptopListing[],
   grounding?: string,
 ): Promise<FinalReport> {
+  const requireApple = needsApplePlatform(basic, answers);
   const fallback = fallbackSpecRecommendation(basic);
 
   const bundle = await runWorkerAgents(basic, answers, grounding);
-  const provisionalSpec = runDeterministicMerge(bundle, fallback);
+  const provisionalSpec = applyPlatform(runDeterministicMerge(bundle, fallback), requireApple);
 
   // Provisional scoring so the synthesizer can reference the real picks while it
   // writes the narrative (the picks depend on the spec, the narrative on picks).
-  const provisional = coreFrom(provisionalSpec, listings, basic);
+  const provisional = coreFrom(provisionalSpec, listings, basic, requireApple);
   const synth = await runSynthesizer(basic, bundle, provisionalSpec, provisional.picks);
 
   // The synthesizer may refine the spec; re-score once for the authoritative picks.
   // source is honest about the SPEC's provenance: "ai" only when a worker actually
   // contributed — the synthesizer alone on an empty bundle just echoes the baseline.
   const aiShapedSpec = hasWorkerData(bundle);
-  const spec: SpecRecommendation = {
-    ...(synth?.spec ?? provisionalSpec),
-    source: aiShapedSpec ? "ai" : "fallback",
-  };
-  const { core, picks } = coreFrom(spec, listings, basic);
+  const spec: SpecRecommendation = applyPlatform(
+    {
+      ...(synth?.spec ?? provisionalSpec),
+      source: aiShapedSpec ? "ai" : "fallback",
+    },
+    requireApple,
+  );
+  const { core, picks } = coreFrom(spec, listings, basic, requireApple);
 
   // The synth wrote its narrative against the provisional picks; only use it if the
   // re-score didn't move the headline pick, else fall back to the (always consistent)
