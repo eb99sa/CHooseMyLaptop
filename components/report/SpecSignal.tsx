@@ -26,10 +26,7 @@ export function SpecSignal({ icon, code, value, lit = false }: SpecSignalProps) 
       >
         <Icon name={icon} size={18} />
       </span>
-      <div className="flex min-w-0 flex-col">
-        <span className="font-mono text-[0.6875rem] uppercase tracking-[0.06em] text-[var(--color-faint)]">
-          {code}
-        </span>
+      <div className="flex min-w-0 flex-col" title={`${code}: ${value}`}>
         <span
           className="truncate text-sm font-bold text-[var(--color-ink)]"
           style={{ unicodeBidi: "plaintext" }}

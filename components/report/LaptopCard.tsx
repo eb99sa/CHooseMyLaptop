@@ -1,4 +1,5 @@
 import type { ListingReview, ScoredLaptop } from "@/lib/types";
+import { USED_SOURCES } from "@/lib/constants";
 import { Badge } from "@/components/ui/Badge";
 import { FitScore } from "@/components/ui/FitScore";
 import { PriceTag } from "@/components/ui/PriceTag";
@@ -38,6 +39,11 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
           {listing.source_type === "seed" && (
             <Badge tone="warning" className="mb-1 ms-1">
               {UI.sampleBadge}
+            </Badge>
+          )}
+          {USED_SOURCES.has(listing.source_type) && (
+            <Badge tone="warning" className="mb-1 ms-1" title={UI.usedNote}>
+              {UI.usedBadge}
             </Badge>
           )}
           <h3 className="text-base font-bold leading-snug text-[var(--color-ink)]">

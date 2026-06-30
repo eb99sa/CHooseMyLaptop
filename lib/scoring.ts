@@ -1,4 +1,4 @@
-import { SCORING_THRESHOLDS, USE_CASE_BASELINES } from "@/lib/constants";
+import { SCORING_THRESHOLDS, USED_SOURCES, USE_CASE_BASELINES } from "@/lib/constants";
 import type {
   BasicNeeds,
   LaptopListing,
@@ -179,6 +179,13 @@ export function recommendablePool(
 
   const usable = base.filter((s) => s.listing.specs.os !== "DOS");
   if (usable.length > 0) base = usable;
+
+  // Condition: a buyer who asked for NEW shouldn't be recommended used classifieds (4Sale/
+  // OpenSooq). Buyers who chose «used» or «either» keep them (flagged «مستعمل» in the report).
+  if (basic.condition_pref === "new") {
+    const newOnly = base.filter((s) => !USED_SOURCES.has(s.listing.source_type));
+    if (newOnly.length > 0) base = newOnly;
+  }
 
   if (opts.requireApple) {
     const apple = base.filter((s) => isApple(s.listing));
