@@ -10,8 +10,7 @@ import { Icon } from "@/components/ui/Icon";
 import { PriceTag } from "@/components/ui/PriceTag";
 import { StateView } from "@/components/ui/StateView";
 import { LaptopCard } from "@/components/report/LaptopCard";
-import { SpecBlock } from "@/components/report/SpecBlock";
-import { ExplainPanel } from "@/components/report/ExplainPanel";
+import { NeedsFlipCard } from "@/components/report/NeedsFlipCard";
 import { RECOMMENDATION_TYPE_LABELS, UI } from "@/lib/i18n";
 import { safeJsonParse } from "@/lib/utils";
 import type { FinalReport, ListingReview } from "@/lib/types";
@@ -95,32 +94,8 @@ export default async function ReportPage({ params }: PageProps) {
             )}
           </header>
 
-          {/* 1) Need summary */}
-          <Card className="space-y-2">
-            <CardTitle>{UI.needSummary}</CardTitle>
-            <p className="text-sm leading-relaxed text-[var(--color-ink)] sm:text-base">
-              {spec.need_summary}
-            </p>
-          </Card>
-
-          {/* 2) Recommended specs */}
-          <Card className="space-y-4">
-            <CardTitle>{UI.recommendedSpecs}</CardTitle>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <SpecBlock title={UI.minimumSpecs} target={spec.spec_range.minimum} />
-              <SpecBlock
-                title={UI.idealSpecs}
-                target={spec.spec_range.ideal}
-                tone="brand"
-              />
-            </div>
-            {spec.spec_range.unnecessary.length > 0 && (
-              <ExplainPanel
-                title={UI.unnecessarySpecs}
-                items={spec.spec_range.unnecessary}
-              />
-            )}
-          </Card>
+          {/* 1) What you need — plain summary by default, flip to tech specs */}
+          <NeedsFlipCard spec={spec} />
 
           {/* 3) Price range */}
           <Card className="space-y-4">
