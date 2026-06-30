@@ -64,8 +64,28 @@ function extractPrice(html: string): number | null {
 }
 
 function extractAvailability(html: string): string {
-  if (/OutOfStock|out[\s_-]*of[\s_-]*stock|غير\s*متوفر|نفد/i.test(html)) return "out_of_stock";
-  if (/InStock|in[\s_-]*stock|متوفر|add\s*to\s*cart|أضف\s*إلى/i.test(html)) return "in_stock";
+  // 1) Authoritative per-product signal: schema.org offers.availability in JSON-LD
+  //    (same node extractPrice reads). The "add to cart" button is NOT reliable — it's
+  //    rendered even for out-of-stock items — and loose "out of stock" text matches
+  //    stray copy elsewhere on the page, so we don't use either.
+  for (const m of html.matchAll(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const j: unknown = JSON.parse(m[1]);
+      for (const node of (Array.isArray(j) ? j : [j]) as Array<{ offers?: unknown }>) {
+        const offers = node.offers;
+        const off = Array.isArray(offers) ? offers[0] : offers;
+        const av = off && typeof off === "object" ? String((off as { availability?: unknown }).availability ?? "") : "";
+        if (/InStock|LimitedAvailability|PreOrder|BackOrder|OnlineOnly/i.test(av)) return "in_stock";
+        if (/OutOfStock|SoldOut|Discontinued/i.test(av)) return "out_of_stock";
+      }
+    } catch {
+      /* try next strategy */
+    }
+  }
+  // 2) Magento stock div: <div class="stock available"> / "stock unavailable".
+  //    \bavailable\b does not match inside "unavailable", so order is safe.
+  if (/\bstock\s+unavailable\b/i.test(html)) return "out_of_stock";
+  if (/\bstock\s+available\b/i.test(html)) return "in_stock";
   return "unknown";
 }
 
