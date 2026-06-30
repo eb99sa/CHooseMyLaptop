@@ -73,6 +73,8 @@ export const SCORING_THRESHOLDS = {
   FRESHNESS_PENALTY_PER_DAY: 1.5,
   SUSPICIOUS_CHEAP_ROI_CAP: 60, // a below-too_low price isn't "high value"
   BEST_VALUE_MIN_FINAL: 55, // best_value pick must clear this final_score
+  BEST_BUDGET_MIN_FINAL: 70, // best_budget must be genuinely GOOD, not a cheap floor pick
+  BUDGET_MIN_FRACTION: 0.8, // picks shouldn't sit below this fraction of the user's budget_min
 } as const;
 
 // ---------------------------------------------------------------------------

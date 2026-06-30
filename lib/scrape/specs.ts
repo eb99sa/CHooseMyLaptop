@@ -165,6 +165,24 @@ function defaultWeight(inch: number): number {
   return 2.2;
 }
 
+/**
+ * Infer the OS. The old heuristic only flipped to macOS on a literal "macos" token,
+ * so every MacBook (title says "MacBook Air M1", not "macOS") was mislabeled Windows.
+ * Now macOS is judged from BRAND + TITLE only — never the description blob, which on
+ * non-Apple machines carries "vs MacBook / rivals macOS" marketing (e.g. Snapdragon
+ * Surface laptops) that would falsely flag them Apple. DOS/FreeDOS/no-OS ⇒ "DOS".
+ */
+export function detectOs(title: string, text: string, brand = ""): string {
+  const ti = title.toLowerCase();
+  const tx = text.toLowerCase();
+  if (brand.toLowerCase() === "apple" || /\bmacbook\b|\bimac\b|\bmac\s*(mini|studio|pro)\b/.test(ti)) {
+    return "macOS";
+  }
+  if (/chrome\s*os|chromebook/.test(tx)) return "ChromeOS";
+  if (/free\s*dos|freedos|\bdos\b|no[-\s]+os\b|without\s+os|بدون\s*نظام/.test(tx)) return "DOS";
+  return "Windows 11";
+}
+
 /** Build a full LaptopSpecs from raw store signals. Never throws. */
 export function normalizeSpecs(s: SpecSignals): LaptopSpecs {
   const text = blob(s);
@@ -192,7 +210,7 @@ export function normalizeSpecs(s: SpecSignals): LaptopSpecs {
     ...(display.display_refresh_hz ? { display_refresh_hz: display.display_refresh_hz } : {}),
     battery_hours: battery_match ? parseInt(battery_match[1], 10) : 6,
     weight_kg: weight_match ? parseFloat(weight_match[1]) : defaultWeight(display.display_inch),
-    os: /macos|mac\s*os/.test(text) ? "macOS" : /chrome\s*os/.test(text) ? "ChromeOS" : "Windows 11",
+    os: detectOs(s.title ?? "", text, s.brand ?? ""),
     release_year: parseYear(text),
     arabic_keyboard: /arabic|عربي/.test(text) || undefined,
     build_quality,
@@ -220,11 +238,15 @@ export const ACCESSORY_RE =
 
 /** Non-laptop form factors that carry a CPU and otherwise slip through. */
 export const NON_LAPTOP_RE =
-  /(legion\s*go|rog\s*ally|steam\s*deck|mini[-\s]*pc|\bdesktop\b|all[-\s]?in[-\s]?one|\btablet\b|\bipad\b|\btab\s|smart\s*watch|\bphone\b|\bmonitor\b|projector|\bnuc\b|handheld|\bserver\b|\bgpu\b\s*card|graphics\s*card)/i;
+  /(legion\s*go|rog\s*ally|steam\s*deck|mini[-\s]*pc|\bmac\s*mini\b|\bimac\b|\bmac\s*studio\b|\bmac\s*pro\b|\bdesktop\b|all[-\s]?in[-\s]?one|\btablet\b|\bipad\b|\btab\s|smart\s*watch|\bphone\b|\bmonitor\b|projector|\bnuc\b|handheld|\bserver\b|\bgpu\b\s*card|graphics\s*card)/i;
 
 /** Heuristic: does this look like an actual laptop (vs. an accessory / other device)? */
 export function looksLikeLaptop(title: string, cpu_tier: number, productType = ""): boolean {
   if (ACCESSORY_RE.test(title) || NON_LAPTOP_RE.test(title)) return false;
+  // Apple also makes desktops (Mac mini/Studio/Pro, iMac) — among Apple products only
+  // MacBooks are laptops, so an Apple/Mac item without "macbook" is not one.
+  const t = title.toLowerCase();
+  if (/\bapple\b|\bmac\b|\bimac\b/.test(t) && !/\bmacbook\b/.test(t)) return false;
   if (/\b(laptop|notebook|macbook)\b/i.test(title) || /laptop/i.test(productType)) return true;
   return cpu_tier > 0; // a recognizable CPU is strong evidence it's a laptop
 }

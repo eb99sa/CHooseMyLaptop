@@ -130,40 +130,89 @@ export interface RecommendationPicks {
   avoid?: ScoredLaptop;
 }
 
+export interface PickOptions {
+  /** When true, only Apple/macOS machines are eligible for the positive picks. */
+  requireApple?: boolean;
+}
+
+/** Mac-only software (the user literally can't run it on Windows) + explicit Mac choice. */
+const APPLE_ONLY = /final\s*cut|\bfcpx?\b|logic\s*pro|garage\s*band|\bxcode\b|\bimovie\b|apple\s*motion|فاينال\s*كت|لوجيك|جراج\s*باند|آيموفي/i;
+const APPLE_PREF = /\bmac\s*os\b|\bmacos\b|\bmacbook\b|\bmac\b|\bapple\b|ماك|ماكبوك|أبل|آبل/i;
+
+/** Does this buyer require an Apple machine (Mac-only software or an explicit Mac choice)? */
+export function needsApplePlatform(basic: BasicNeeds, answers: { question_text: string; answer_value: string }[]): boolean {
+  const hay = [basic.preferred_stores ?? "", ...answers.map((a) => `${a.question_text} ${a.answer_value}`)].join(" ");
+  return APPLE_ONLY.test(hay) || APPLE_PREF.test(hay);
+}
+
+function isApple(l: LaptopListing): boolean {
+  return l.brand.toLowerCase() === "apple" || l.specs.os === "macOS" || /\bmacbook\b/i.test(l.product_title);
+}
+
 export function pickRecommendations(
   scored: ScoredLaptop[],
   basic: BasicNeeds,
+  opts: PickOptions = {},
 ): RecommendationPicks {
   if (scored.length === 0) return {};
   // Seed rows are benchmark/test data — never RECOMMEND them as a pick (they still
   // appear, flagged, in the full ranked list). Fall back to them only if there is
   // nothing real to recommend at all.
   const real = scored.filter((s) => s.listing.source_type !== "seed");
-  const base = real.length > 0 ? real : scored;
-  const withinBudget = base.filter((s) => s.listing.price <= basic.budget_max);
-  const pool = withinBudget.length > 0 ? withinBudget : base;
+  let base = real.length > 0 ? real : scored;
 
-  // Prefer a buyable (in-stock) machine for every headline pick — an out-of-stock
-  // laptop the user can't actually buy shouldn't be the recommendation.
+  // A machine with no usable OS (DOS/FreeDOS) is useless to a non-technical buyer — it
+  // would need Windows bought + installed. Never headline one (it still shows in the list).
+  const usable = base.filter((s) => s.listing.specs.os !== "DOS");
+  if (usable.length > 0) base = usable;
+
+  // Platform gate: a user who needs Apple (Mac-only software / Mac preference) must not
+  // be handed a Windows machine they can't run their software on. If the catalog has no
+  // Apple option in reach we leave base as-is — recommend.ts surfaces a warning rather
+  // than silently violating the requirement.
+  if (opts.requireApple) {
+    const apple = base.filter((s) => isApple(s.listing));
+    if (apple.length > 0) base = apple;
+  }
+
+  // Prefer a buyable (in-stock) machine for every headline pick.
   const stock = (s: ScoredLaptop) => (s.listing.availability === "in_stock" ? 0 : 1);
+
+  // Respect BOTH ends of the stated budget. A 79 KWD pick for a 500-700 KWD buyer is
+  // nonsense — keep picks within [budget_min*FRACTION, budget_max], allowing only a
+  // small undershoot for genuine value.
+  const floor = basic.budget_min > 0 ? basic.budget_min * SCORING_THRESHOLDS.BUDGET_MIN_FRACTION : 0;
+  const inBand = base.filter((s) => s.listing.price >= floor && s.listing.price <= basic.budget_max);
+  const underMax = base.filter((s) => s.listing.price <= basic.budget_max);
+  const pool = inBand.length > 0 ? inBand : underMax.length > 0 ? underMax : base;
 
   const best_overall = [...pool].sort((a, b) => stock(a) - stock(b) || b.final_score - a.final_score)[0];
 
-  const acceptable = pool.filter((s) => s.final_score >= 60 && s.warnings.length === 0);
-  const budgetPool = acceptable.length > 0 ? acceptable : pool;
+  // best_budget = the most AFFORDABLE machine that is still genuinely good (real fitness
+  // floor — never a junk i3/4GB/HDD), distinct from best_overall.
+  const goodEnough = pool.filter(
+    (s) => s.final_score >= SCORING_THRESHOLDS.BEST_BUDGET_MIN_FINAL && s.warnings.length === 0,
+  );
+  const budgetPool = (goodEnough.length > 0 ? goodEnough : pool).filter(
+    (s) => s.listing.id !== best_overall?.listing.id,
+  );
   const best_budget = [...budgetPool].sort(
     (a, b) => stock(a) - stock(b) || a.listing.price - b.listing.price || b.final_score - a.final_score,
   )[0];
 
-  // best_value is roi-sorted, but only among reasonably-fitting machines so a
-  // junk-cheap listing can't win purely on a favorable price ratio.
-  const valuePool = pool.filter((s) => s.final_score >= SCORING_THRESHOLDS.BEST_VALUE_MIN_FINAL);
-  const best_value = [...(valuePool.length > 0 ? valuePool : pool)].sort(
+  // best_value is roi-sorted among reasonably-fitting machines, distinct from the others.
+  const chosen = new Set([best_overall?.listing.id, best_budget?.listing.id].filter(Boolean));
+  const valuePool = pool.filter(
+    (s) => s.final_score >= SCORING_THRESHOLDS.BEST_VALUE_MIN_FINAL && !chosen.has(s.listing.id),
+  );
+  const valueFallback = pool.filter((s) => !chosen.has(s.listing.id));
+  const best_value = [...(valuePool.length > 0 ? valuePool : valueFallback)].sort(
     (a, b) => stock(a) - stock(b) || b.roi_score - a.roi_score,
   )[0];
 
   // Worst candidate, surfaced only if it's genuinely weak AND it isn't already
-  // recommended as one of the positive picks (avoid contradictory labeling).
+  // recommended as one of the positive picks (avoid contradictory labeling). Drawn from
+  // the FULL base (pre-band) so a junk floor machine can still be flagged.
   const pickedIds = new Set(
     [best_overall, best_budget, best_value]
       .filter((p): p is ScoredLaptop => Boolean(p))
