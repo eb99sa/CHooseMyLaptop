@@ -4,9 +4,10 @@ import { Badge } from "@/components/ui/Badge";
 import { FitScore } from "@/components/ui/FitScore";
 import { PriceTag } from "@/components/ui/PriceTag";
 import { Icon } from "@/components/ui/Icon";
-import { SpecSignal } from "@/components/report/SpecSignal";
+import { SpecBar } from "@/components/report/SpecBar";
 import { Tip } from "@/components/ui/Tip";
 import { UI } from "@/lib/i18n";
+import { specMeters, shortLaptopName } from "@/lib/specView";
 import { cn } from "@/lib/utils";
 
 interface LaptopCardProps {
@@ -46,18 +47,13 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
               {UI.usedBadge}
             </Badge>
           )}
-          <h3 className="text-base font-bold leading-snug text-[var(--color-ink)]">
-            {listing.product_title}
+          <h3
+            className="text-base font-bold leading-snug text-[var(--color-ink)]"
+            title={listing.product_title}
+            dir="auto"
+          >
+            {shortLaptopName(listing.product_title)}
           </h3>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--color-muted)]">
-            {listing.brand && <span dir="auto">{listing.brand}</span>}
-            {listing.store_name && (
-              <>
-                <span aria-hidden>•</span>
-                <span dir="auto">{listing.store_name}</span>
-              </>
-            )}
-          </div>
           <div className="pt-1">
             <PriceTag price={listing.price} currency={listing.currency} />
           </div>
@@ -65,11 +61,11 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
         <FitScore value={final_score} size={72} />
       </header>
 
-      <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2">
-        <SpecSignal icon="cpu" code="CPU" value={s.cpu} />
-        <SpecSignal icon="ram" code="RAM" value={`${s.ram_gb} GB`} />
-        <SpecSignal icon="ssd" code={s.storage_type} value={`${s.storage_gb} GB`} />
-        <SpecSignal icon="gpu" code="GPU" value={s.gpu} />
+      {/* Each spec as what it MEANS + a strength bar (tech detail muted at the end). */}
+      <div className="grid grid-cols-1 gap-x-5 gap-y-3 min-[400px]:grid-cols-2">
+        {specMeters(s).map((m) => (
+          <SpecBar key={m.key} label={m.label} level={m.level} value={m.value} />
+        ))}
       </div>
 
       {/* One short "why" line, then everything else folds into tap-chips (mobile-first). */}
