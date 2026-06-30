@@ -41,10 +41,10 @@ export const USE_CASE_WEIGHTS = {
   design: { use_case_fit: 0.29, price_performance: 0.2, build_reliability: 0.13, battery_portability: 0.08, display_comfort: 0.19, upgradeability: 0.06, local_availability: 0.05 },
   // CAD/simulation: strong compute + upgrade headroom for longevity.
   engineering: { use_case_fit: 0.31, price_performance: 0.21, build_reliability: 0.13, battery_portability: 0.08, display_comfort: 0.12, upgradeability: 0.1, local_availability: 0.05 },
-  // Gaming = GPU + high-refresh display; battery nearly irrelevant (plugged in).
-  gaming: { use_case_fit: 0.32, price_performance: 0.2, build_reliability: 0.12, battery_portability: 0.05, display_comfort: 0.2, upgradeability: 0.06, local_availability: 0.05 },
-  // 4K editing: compute + color-accurate display + upgrade headroom.
-  video_editing: { use_case_fit: 0.3, price_performance: 0.2, build_reliability: 0.12, battery_portability: 0.06, display_comfort: 0.19, upgradeability: 0.08, local_availability: 0.05 },
+  // Gaming = GPU above all (+ refresh display); battery nearly irrelevant (plugged in).
+  gaming: { use_case_fit: 0.38, price_performance: 0.2, build_reliability: 0.12, battery_portability: 0.05, display_comfort: 0.14, upgradeability: 0.06, local_availability: 0.05 },
+  // 4K editing: GPU/compute first, then color-accurate display + upgrade headroom.
+  video_editing: { use_case_fit: 0.35, price_performance: 0.2, build_reliability: 0.12, battery_portability: 0.06, display_comfort: 0.14, upgradeability: 0.08, local_availability: 0.05 },
   // Business travellers: battery + weight + durability are paramount.
   business: { use_case_fit: 0.25, price_performance: 0.22, build_reliability: 0.16, battery_portability: 0.2, display_comfort: 0.07, upgradeability: 0.05, local_availability: 0.05 },
   // Family use = best value with durability; no pro specs needed.
