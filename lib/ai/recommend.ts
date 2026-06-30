@@ -22,6 +22,7 @@ import {
   needsApplePlatform,
   pickRecommendations,
   rankLaptops,
+  recommendablePool,
   type RecommendationPicks,
 } from "@/lib/scoring";
 import { mergeSpec } from "@/lib/ai/merge";
@@ -118,10 +119,13 @@ function coreFrom(
 } {
   const scored = rankLaptops(listings, spec, basic);
   const picks = pickRecommendations(scored, basic, { requireApple });
+  // The report shows the RECOMMENDABLE set (not the raw catalog) so its top is best_overall
+  // — a higher-scored laptop the user can't buy/use never sits above the recommended one.
+  const display = recommendablePool(scored, basic, { requireApple });
   return {
     core: {
       spec,
-      scored: scored.slice(0, SCORED_LIMIT),
+      scored: display.slice(0, SCORED_LIMIT),
       best_overall: picks.best_overall,
       best_budget: picks.best_budget,
       best_value: picks.best_value,

@@ -116,21 +116,6 @@ const COMMON: AIQuestion[] = [
   ),
 ];
 
-// Platform/OS matters most for creative & professional work (some software is OS-locked).
-const PLATFORM_SENSITIVE = new Set<UseCase>(["design", "video_editing", "programming", "engineering"]);
-const PLATFORM_Q: AIQuestion = q(
-  "os_preference",
-  "أي نظام تفضّل أو تحتاج؟ (بعض البرامج مثل فاينال كت ولوجيك برو تعمل على ماك فقط)",
-  "single_select",
-  3,
-  [
-    { value: "windows", label: "ويندوز" },
-    { value: "mac", label: "ماك (macOS)" },
-    { value: "either", label: "لا يهمني / مو متأكد" },
-  ],
-  "يحدّد إن كان الجهاز لازم يكون ماك أو ويندوز حسب برامجك.",
-);
-
 const BY_USE_CASE: Partial<Record<UseCase, AIQuestion[]>> = {
   teaching: [
     q(
@@ -270,6 +255,5 @@ const BY_USE_CASE: Partial<Record<UseCase, AIQuestion[]>> = {
 
 export function fallbackQuestions(useCase: UseCase): AIQuestion[] {
   const specific = BY_USE_CASE[useCase] ?? [];
-  const platform = PLATFORM_SENSITIVE.has(useCase) ? [PLATFORM_Q] : [];
-  return [...specific, ...platform, ...COMMON].sort((a, b) => a.sort_order - b.sort_order).slice(0, 6);
+  return [...specific, ...COMMON].sort((a, b) => a.sort_order - b.sort_order).slice(0, 6);
 }
