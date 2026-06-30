@@ -161,6 +161,11 @@ export function pickRecommendations(
   const real = scored.filter((s) => s.listing.source_type !== "seed");
   let base = real.length > 0 ? real : scored;
 
+  // A machine with no usable OS (DOS/FreeDOS) is useless to a non-technical buyer — it
+  // would need Windows bought + installed. Never headline one (it still shows in the list).
+  const usable = base.filter((s) => s.listing.specs.os !== "DOS");
+  if (usable.length > 0) base = usable;
+
   // Platform gate: a user who needs Apple (Mac-only software / Mac preference) must not
   // be handed a Windows machine they can't run their software on. If the catalog has no
   // Apple option in reach we leave base as-is — recommend.ts surfaces a warning rather
