@@ -95,14 +95,21 @@ export function gpuTier(text: string): { gpu: string; gpu_tier: number } {
 
 // ---------- RAM ----------
 export function parseRam(text: string): number {
-  const t = text.toLowerCase();
+  // Strip GPU VRAM so it isn't mistaken for system RAM — gaming laptops list both, e.g.
+  // "RTX 5070 8GB ... 16GB RAM" must yield 16, not 8. Remove "<gpu> <model> <n>GB" and any
+  // "<n>GB <vram/gddr/vga/gpu>" before reading RAM. (Dedicated-GPU models only, so an
+  // integrated "Radeon Graphics 16GB" isn't stripped.)
+  const t = text
+    .toLowerCase()
+    .replace(/\b(rtx|gtx|rx|arc)\s*\d{3,4}\s*(ti|super)?\s*\d{1,2}\s*gb/g, " ")
+    .replace(/\d{1,2}\s*gb\s*(vram|gddr\d?|\bvga\b|graphics\s*card|geforce|\brtx\b|\bgtx\b)/g, " ");
   // Prefer an explicit RAM context.
-  const ctx = t.match(/(\d{1,3})\s*gb[^.]{0,12}(ram|memory|ذاكرة)/) || t.match(/(ram|memory|ذاكرة)[^.]{0,12}(\d{1,3})\s*gb/);
+  const ctx = t.match(/(\d{1,3})\s*gb[^.]{0,12}(ram|memory|ddr\d|ذاكرة)/) || t.match(/(ram|memory|ذاكرة)[^.]{0,12}(\d{1,3})\s*gb/);
   if (ctx) {
     const n = parseInt(ctx[1].match(/\d+/) ? ctx[1] : ctx[2], 10);
     if (n >= 2 && n <= 256) return n;
   }
-  // Else the first plausible RAM-sized GB value.
+  // Else the first plausible RAM-sized GB value (from the VRAM-stripped text).
   for (const m of t.matchAll(/(\d{1,3})\s*gb/g)) {
     const n = parseInt(m[1], 10);
     if ([4, 8, 12, 16, 24, 32, 36, 48, 64, 96, 128].includes(n)) return n;

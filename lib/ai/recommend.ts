@@ -1,10 +1,13 @@
 import type {
   BasicNeeds,
   FinalReport,
+  GpuClass,
   LaptopListing,
   SpecRecommendation,
+  UseCase,
   UserAnswer,
 } from "@/lib/types";
+import { COMPUTE_GPU_HEAVY, GPU_CLASS_MIN_TIER, USE_CASE_BASELINES } from "@/lib/constants";
 import { chatJson, isAiConfigured } from "@/lib/ai/openrouter";
 import {
   NARRATIVE_SYSTEM,
@@ -58,6 +61,50 @@ function applyPlatform(spec: SpecRecommendation, requireApple: boolean): SpecRec
       ideal: { ...spec.spec_range.ideal, os: "macOS" },
     },
   };
+}
+
+function higherGpu(a: GpuClass, b: GpuClass): GpuClass {
+  return (GPU_CLASS_MIN_TIER[a] ?? 0) >= (GPU_CLASS_MIN_TIER[b] ?? 0) ? a : b;
+}
+// For GPU-heavy use cases (gaming / video editing) the calibrated use-case baseline owns the
+// DECISIVE compute targets: the GPU is a floor the AI can't undercut, and RAM/CPU are anchored
+// to the baseline so a model that over- or under-states them can't flip the ranking — e.g.
+// inflating the gaming RAM target to 32GB and thereby penalising a 16GB gaming laptop that has
+// a far stronger GPU. The AI still shapes price / display / narrative.
+function clampComputeFloor(spec: SpecRecommendation, useCase: UseCase): SpecRecommendation {
+  if (!COMPUTE_GPU_HEAVY.has(useCase)) return spec;
+  const base = USE_CASE_BASELINES[useCase];
+  const min = spec.spec_range.minimum;
+  const ideal = spec.spec_range.ideal;
+  return {
+    ...spec,
+    spec_range: {
+      ...spec.spec_range,
+      minimum: { ...min, gpu: higherGpu(min.gpu, base.minimum.gpu), ram_gb: base.minimum.ram_gb, cpu_tier: base.minimum.cpu_tier },
+      ideal: { ...ideal, gpu: higherGpu(ideal.gpu, base.ideal.gpu), ram_gb: base.ideal.ram_gb, cpu_tier: base.ideal.cpu_tier },
+    },
+  };
+}
+
+// A laptop inside the user's stated budget must never be scored "overpriced" — that
+// biases picks toward the cheapest machine and wastes budget the user is happy to spend.
+// So the fair band's upper edge tracks budget_max regardless of what the AI returned.
+function clampPriceToBudget(spec: SpecRecommendation, basic: BasicNeeds): SpecRecommendation {
+  if (!(basic.budget_max > 0)) return spec;
+  const pr = spec.price_range;
+  const fair_max = Math.max(pr.fair_max, Math.round(basic.budget_max * 0.92));
+  const overpriced = Math.max(pr.overpriced, Math.round(basic.budget_max * 1.1), Math.round(fair_max * 1.08));
+  if (fair_max === pr.fair_max && overpriced === pr.overpriced) return spec;
+  return { ...spec, price_range: { ...pr, fair_max, overpriced } };
+}
+
+// Apply every deterministic guard to a (possibly AI-shaped) spec: platform requirement,
+// GPU floor for GPU-heavy use cases, and a budget-aligned price band.
+function finalizeSpec(spec: SpecRecommendation, basic: BasicNeeds, requireApple: boolean): SpecRecommendation {
+  return clampPriceToBudget(
+    clampComputeFloor(applyPlatform(spec, requireApple), basic.primary_use_case),
+    basic,
+  );
 }
 
 function coreFrom(
@@ -179,7 +226,7 @@ async function legacyBuild(
   grounding?: string,
 ): Promise<FinalReport> {
   const requireApple = needsApplePlatform(basic, answers);
-  const spec = applyPlatform(await getSpecRecommendation(basic, answers, grounding), requireApple);
+  const spec = finalizeSpec(await getSpecRecommendation(basic, answers, grounding), basic, requireApple);
   const { core } = coreFrom(spec, listings, basic, requireApple);
   const { narrative, fromAi } = await getNarrative(basic, spec, core);
   return { ...core, narrative, source: spec.source === "ai" || fromAi ? "ai" : "fallback" };
@@ -224,7 +271,7 @@ async function multiAgentBuild(
   const fallback = fallbackSpecRecommendation(basic);
 
   const bundle = await runWorkerAgents(basic, answers, grounding);
-  const provisionalSpec = applyPlatform(runDeterministicMerge(bundle, fallback), requireApple);
+  const provisionalSpec = finalizeSpec(runDeterministicMerge(bundle, fallback), basic, requireApple);
 
   // Provisional scoring so the synthesizer can reference the real picks while it
   // writes the narrative (the picks depend on the spec, the narrative on picks).
@@ -235,11 +282,9 @@ async function multiAgentBuild(
   // source is honest about the SPEC's provenance: "ai" only when a worker actually
   // contributed — the synthesizer alone on an empty bundle just echoes the baseline.
   const aiShapedSpec = hasWorkerData(bundle);
-  const spec: SpecRecommendation = applyPlatform(
-    {
-      ...(synth?.spec ?? provisionalSpec),
-      source: aiShapedSpec ? "ai" : "fallback",
-    },
+  const spec: SpecRecommendation = finalizeSpec(
+    { ...(synth?.spec ?? provisionalSpec), source: aiShapedSpec ? "ai" : "fallback" },
+    basic,
     requireApple,
   );
   const { core, picks } = coreFrom(spec, listings, basic, requireApple);

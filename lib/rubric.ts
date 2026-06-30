@@ -167,8 +167,12 @@ export function scoreUseCaseFit(
   const storType = s.storage_type === "SSD" ? 100 : 35;
 
   const gpuHeavy = COMPUTE_GPU_HEAVY.has(useCase);
+  // For GPU-heavy use cases (gaming / video editing) the GPU is the decisive component,
+  // so it carries most of the weight — a stronger in-budget GPU out-ranks a faster CPU
+  // bolted to a weak GPU, instead of cpu/ram/storage diluting the GPU gap (which let an
+  // RTX 5050 thin-and-light beat an in-budget RTX 5070 gaming laptop).
   const score = gpuHeavy
-    ? round(cpu * 0.25 + ram * 0.22 + gpu * 0.33 + storage * 0.12 + storType * 0.08)
+    ? round(cpu * 0.15 + ram * 0.13 + gpu * 0.55 + storage * 0.1 + storType * 0.07)
     : round(cpu * 0.38 + ram * 0.3 + gpu * 0.12 + storage * 0.12 + storType * 0.08);
 
   // Note: gpu_tier 0/1 is a valid *integrated* GPU, not missing data — so it is
@@ -430,12 +434,16 @@ export function buildReasons(ctx: RubricContext): string[] {
 }
 
 export function buildWarnings(ctx: RubricContext): string[] {
-  const { listing, spec, basic, dataConfidence } = ctx;
+  const { listing, spec, basic, useCase, dataConfidence } = ctx;
   const s = listing.specs;
   const min = spec.spec_range.minimum;
   const warnings: string[] = [];
 
   if (s.cpu_tier < min.cpu_tier) warnings.push("المعالج أضعف من الحد الأدنى اللي يناسب استخدامك.");
+  // Integrated graphics can't do gaming / heavy video editing — unambiguous, so warn
+  // (we don't warn on a merely-entry dedicated GPU like an x050, which still games).
+  if (COMPUTE_GPU_HEAVY.has(useCase) && s.gpu_tier <= 1)
+    warnings.push("كرت الشاشة مدمج (غير مخصّص) — ما يناسب الألعاب أو المونتاج الثقيل.");
   if (s.ram_gb < min.ram_gb) warnings.push(`الذاكرة (${s.ram_gb}GB) أقل من المطلوب (${min.ram_gb}GB).`);
   if (s.storage_type !== "SSD") warnings.push("القرص نوعه HDD وبطيء؛ الأفضل SSD.");
   if (listing.price > spec.price_range.overpriced) warnings.push("سعره مبالغ فيه مقارنة بقيمته.");
