@@ -77,6 +77,10 @@ export const SCORING_THRESHOLDS = {
   BUDGET_MIN_FRACTION: 0.8, // picks shouldn't sit below this fraction of the user's budget_min
 } as const;
 
+// Sources that are the USED / classifieds market (private sellers). The report flags these
+// «مستعمل», and recommendations exclude them when the buyer explicitly asked for NEW.
+export const USED_SOURCES = new Set<string>(["4sale", "opensooq"]);
+
 // ---------------------------------------------------------------------------
 // Per-dimension data-confidence levels (0.5..1.0). Confidence NEVER inflates a
 // score — it only feeds the honest data_confidence signal and يحتاج تحقق notes.

@@ -29,12 +29,14 @@ import { wibiAdapter } from "@/lib/scrape/sources/wibi";
 import { xciteAdapter } from "@/lib/scrape/sources/xcite";
 import { nextAdapter } from "@/lib/scrape/sources/next";
 import { bestAdapter } from "@/lib/scrape/sources/best";
+import { foursaleAdapter } from "@/lib/scrape/sources/foursale";
 import { replaceSourceListings } from "@/lib/scrape/upsert";
 import { closeBrowser } from "@/lib/scrape/headless";
 import { createServiceClient, isDbConfigured } from "@/lib/supabase/service";
 
 // `next` uses a headless browser (Cloudflare) and is best run from a Kuwaiti IP.
-const ADAPTERS: StoreAdapter[] = [pckuwaitAdapter, wibiAdapter, xciteAdapter, bestAdapter, nextAdapter];
+// 4Sale = the USED market (classifieds); flagged «مستعمل» in the report via source_type.
+const ADAPTERS: StoreAdapter[] = [pckuwaitAdapter, wibiAdapter, xciteAdapter, bestAdapter, nextAdapter, foursaleAdapter];
 
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
