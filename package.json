@@ -12,6 +12,7 @@
     "scrape": "npx tsx scripts/scrape-stores.mts",
     "ingest-knowledge": "npx tsx scripts/ingest-knowledge.mts",
     "ingest-rtings": "npx tsx scripts/ingest-rtings.mts",
+    "reprocess-specs": "npx tsx scripts/reprocess-specs.mts",
     "simulate": "npx tsx scripts/simulate.mts",
     "verify": "npx tsx scripts/verify-rubric.mts && npx tsx scripts/verify-rag.mts && npx tsx scripts/verify-agents.mts"
   },
