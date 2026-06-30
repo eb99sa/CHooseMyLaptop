@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { LaptopListing, LaptopSpecs } from "@/lib/types";
+import type { ListingReview, LaptopListing, LaptopSpecs } from "@/lib/types";
 import { safeJsonParse } from "@/lib/utils";
 
 // Safe defaults so a malformed specs_json can never crash scoring.
@@ -87,4 +87,44 @@ export async function fetchAllListings(
     if (local.length > 0) return local;
   }
   return all;
+}
+
+interface ReviewRow {
+  laptop_listing_id: string | null;
+  source_name: string | null;
+  source_url: string | null;
+  review_summary: string | null;
+  pros_json: unknown;
+  cons_json: unknown;
+}
+
+/** Third-party reviews (e.g. rtings) for the given listing IDs — one review per listing. */
+export async function fetchReviewsForListings(
+  supabase: SupabaseClient,
+  listingIds: string[],
+): Promise<Map<string, ListingReview>> {
+  const map = new Map<string, ListingReview>();
+  const ids = [...new Set(listingIds.filter(Boolean))];
+  if (ids.length === 0) return map;
+  // Chunk the IN() so a large id list can't blow the query URL length limit.
+  const CHUNK = 150;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const { data, error } = await supabase
+      .from("laptop_reviews")
+      .select("laptop_listing_id, source_name, source_url, review_summary, pros_json, cons_json")
+      .in("laptop_listing_id", ids.slice(i, i + CHUNK));
+    if (error) continue;
+    for (const r of (data ?? []) as ReviewRow[]) {
+      const id = r.laptop_listing_id;
+      if (!id || map.has(id)) continue; // keep the first review per listing
+      map.set(id, {
+        source_name: r.source_name ?? "rtings",
+        source_url: r.source_url,
+        summary: r.review_summary ?? "",
+        pros: Array.isArray(r.pros_json) ? (r.pros_json as string[]) : [],
+        cons: Array.isArray(r.cons_json) ? (r.cons_json as string[]) : [],
+      });
+    }
+  }
+  return map;
 }

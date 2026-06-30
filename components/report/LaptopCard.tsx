@@ -1,4 +1,4 @@
-import type { ScoredLaptop } from "@/lib/types";
+import type { ListingReview, ScoredLaptop } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { FitScore } from "@/components/ui/FitScore";
 import { PriceTag } from "@/components/ui/PriceTag";
@@ -12,11 +12,12 @@ interface LaptopCardProps {
   scored: ScoredLaptop;
   highlight?: boolean;
   badgeLabel?: string;
+  review?: ListingReview;
 }
 
 // A decision report, not a marketing card: rank, fit dial, KWD price, the
 // signals that matter, and an honest why / where-it-may-not-fit.
-export function LaptopCard({ scored, highlight = false, badgeLabel }: LaptopCardProps) {
+export function LaptopCard({ scored, highlight = false, badgeLabel, review }: LaptopCardProps) {
   const { listing, final_score, roi_score, reasons, warnings } = scored;
   const s = listing.specs;
 
@@ -102,6 +103,38 @@ export function LaptopCard({ scored, highlight = false, badgeLabel }: LaptopCard
             </li>
           ))}
         </ul>
+      )}
+
+      {review && (review.summary || review.pros.length > 0 || review.cons.length > 0) && (
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-surface)] p-3">
+          <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-[var(--color-muted)]">
+            <Icon name="check" size={14} />
+            <span dir="auto">حسب اختبارات {review.source_name}</span>
+          </div>
+          {review.summary && (
+            <p className="text-xs leading-relaxed text-[var(--color-ink)]">{review.summary}</p>
+          )}
+          {review.pros.length > 0 && (
+            <p className="mt-1.5 text-xs leading-relaxed text-[var(--color-success)]">
+              + {review.pros.slice(0, 3).join("، ")}
+            </p>
+          )}
+          {review.cons.length > 0 && (
+            <p className="mt-1 text-xs leading-relaxed text-[var(--color-warning)]">
+              − {review.cons.slice(0, 3).join("، ")}
+            </p>
+          )}
+          {review.source_url && (
+            <a
+              href={review.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1.5 inline-block text-[11px] text-[var(--color-faint)] underline"
+            >
+              المصدر: {review.source_name}.com
+            </a>
+          )}
+        </div>
       )}
 
       {listing.url && (

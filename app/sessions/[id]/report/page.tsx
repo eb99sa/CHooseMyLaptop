@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionForViewer } from "@/lib/services/sessions";
+import { fetchReviewsForListings } from "@/lib/data/listings";
+import { createServiceClient, isDbConfigured } from "@/lib/supabase/service";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { Card, CardTitle, CardMuted } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -12,7 +14,7 @@ import { SpecBlock } from "@/components/report/SpecBlock";
 import { ExplainPanel } from "@/components/report/ExplainPanel";
 import { RECOMMENDATION_TYPE_LABELS, UI } from "@/lib/i18n";
 import { safeJsonParse } from "@/lib/utils";
-import type { FinalReport } from "@/lib/types";
+import type { FinalReport, ListingReview } from "@/lib/types";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -61,6 +63,16 @@ export default async function ReportPage({ params }: PageProps) {
     seenPickIds.add(p.scored.listing.id);
     return true;
   });
+
+  // Third-party (rtings) reviews for every listing shown, attached by listing id.
+  const listingIds = [
+    ...scored.map((s) => s.listing.id),
+    ...picks.map((p) => p.scored!.listing.id),
+    report.avoid?.listing.id,
+  ].filter((x): x is string => Boolean(x));
+  const reviews: Map<string, ListingReview> = isDbConfigured()
+    ? await fetchReviewsForListings(createServiceClient(), listingIds)
+    : new Map();
 
   return (
     <>
@@ -174,6 +186,7 @@ export default async function ReportPage({ params }: PageProps) {
                   <LaptopCard
                     key={p.key}
                     scored={p.scored!}
+                    review={reviews.get(p.scored!.listing.id)}
                     highlight
                     badgeLabel={
                       RECOMMENDATION_TYPE_LABELS[
@@ -188,7 +201,7 @@ export default async function ReportPage({ params }: PageProps) {
                   <div className="mb-3 flex items-center gap-2">
                     <Badge tone="danger">{RECOMMENDATION_TYPE_LABELS.avoid}</Badge>
                   </div>
-                  <LaptopCard scored={report.avoid} />
+                  <LaptopCard scored={report.avoid} review={reviews.get(report.avoid.listing.id)} />
                 </div>
               )}
             </section>
@@ -202,7 +215,7 @@ export default async function ReportPage({ params }: PageProps) {
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {scored.map((s) => (
-                  <LaptopCard key={s.listing.id} scored={s} />
+                  <LaptopCard key={s.listing.id} scored={s} review={reviews.get(s.listing.id)} />
                 ))}
               </div>
             </section>

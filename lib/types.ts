@@ -176,6 +176,18 @@ export interface LaptopListing {
   last_checked_at?: string | null;
 }
 
+/**
+ * A third-party review attached to a listing (e.g. rtings). Numeric scores may be absent
+ * (rtings' numbers are paywalled — we carry only the public qualitative findings, attributed).
+ */
+export interface ListingReview {
+  source_name: string; // "rtings"
+  source_url: string | null;
+  summary: string;
+  pros: string[];
+  cons: string[];
+}
+
 // ---------------------------------------------------------------------------
 // Scoring
 // ---------------------------------------------------------------------------
