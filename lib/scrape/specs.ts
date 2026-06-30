@@ -28,7 +28,7 @@ function blob(s: SpecSignals): string {
 
 // ---------- CPU ----------
 export function cpuTier(text: string): { cpu: string; cpu_tier: number } {
-  const t = text.toLowerCase();
+  const t = text.toLowerCase().replace(/[™®©]/g, " "); // ™/® break chip regexes ("Ryzen™ 7")
   // Apple silicon — only in an actually-Apple context (avoid matching an "M2"
   // SSD slot or a stray "M3" token inside a non-Apple product).
   if (/\bapple\b|macbook/.test(t)) {
@@ -40,6 +40,19 @@ export function cpuTier(text: string): { cpu: string; cpu_tier: number } {
     if (/\bm2\b/.test(t)) return { cpu: "Apple M2", cpu_tier: 8 };
     if (/\bm1\s*(max|pro)\b/.test(t)) return { cpu: "Apple M1 Pro/Max", cpu_tier: 8 };
     if (/\bm1\b/.test(t)) return { cpu: "Apple M1", cpu_tier: 7 };
+    // Newer (M5+) and any future M-series — top tier.
+    if (/\bm[5-9]\b/.test(t)) {
+      const g = (t.match(/\bm([5-9])\b/) ?? [])[1];
+      const variant = /\bm[5-9]\s*(ultra|max|pro)\b/.test(t);
+      return { cpu: `Apple M${g}${variant ? " Pro/Max" : ""}`, cpu_tier: 10 };
+    }
+    // Apple A-series silicon (e.g. the A18/A18 Pro entry MacBook) — efficient chips,
+    // strong for everyday use but below the M-series for heavy work.
+    const aSeries = t.match(/\b(a1[4-9])\s*(pro)?\b/);
+    if (aSeries) {
+      const pro = Boolean(aSeries[2]);
+      return { cpu: `Apple ${aSeries[1].toUpperCase()}${pro ? " Pro" : ""}`, cpu_tier: pro ? 7 : 6 };
+    }
   }
 
   const highPerf = /\b(hx|hs|\d{4,5}h)\b/.test(t); // mobile high-power suffix
@@ -50,6 +63,7 @@ export function cpuTier(text: string): { cpu: string; cpu_tier: number } {
   if (/\bi3\b|core\s*i?3|ultra\s*3/.test(t)) return { cpu: "Intel Core i3", cpu_tier: 4 };
   if (/celeron|pentium|\bn\d{3,4}\b|atom/.test(t)) return { cpu: "Intel Celeron/Pentium", cpu_tier: 2 };
   // AMD Ryzen (incl. the new "Ryzen AI" Zen5 + NPU line)
+  if (/ryzen\s*ai\s*max/.test(t)) return { cpu: "AMD Ryzen AI Max", cpu_tier: 9 };
   if (/ryzen\s*ai\s*9/.test(t)) return { cpu: "AMD Ryzen AI 9", cpu_tier: 9 };
   if (/ryzen\s*ai\s*7/.test(t)) return { cpu: "AMD Ryzen AI 7", cpu_tier: 8 };
   if (/ryzen\s*ai\s*5/.test(t)) return { cpu: "AMD Ryzen AI 5", cpu_tier: 7 };
@@ -67,7 +81,7 @@ export function cpuTier(text: string): { cpu: string; cpu_tier: number } {
 
 // ---------- GPU ----------
 export function gpuTier(text: string): { gpu: string; gpu_tier: number } {
-  const t = text.toLowerCase();
+  const t = text.toLowerCase().replace(/[™®©]/g, " ");
   const rtx = t.match(/rtx\s*([2-5]0[5-9]0)/); // RTX 2050..5090 family digits
   if (rtx) {
     const n = parseInt(rtx[1], 10);
