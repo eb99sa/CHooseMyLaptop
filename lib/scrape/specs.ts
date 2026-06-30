@@ -168,19 +168,18 @@ function defaultWeight(inch: number): number {
 /**
  * Infer the OS. The old heuristic only flipped to macOS on a literal "macos" token,
  * so every MacBook (title says "MacBook Air M1", not "macOS") was mislabeled Windows.
- * Now: Apple brand / MacBook / Apple-silicon ⇒ macOS; DOS/FreeDOS/no-OS ⇒ "DOS"
- * (a machine that ships without a usable OS); ChromeOS; else Windows.
+ * Now macOS is judged from BRAND + TITLE only — never the description blob, which on
+ * non-Apple machines carries "vs MacBook / rivals macOS" marketing (e.g. Snapdragon
+ * Surface laptops) that would falsely flag them Apple. DOS/FreeDOS/no-OS ⇒ "DOS".
  */
-export function detectOs(text: string, brand = ""): string {
-  const t = text.toLowerCase();
-  if (
-    brand.toLowerCase() === "apple" ||
-    /\bmacbook\b|\bimac\b|\bmac\s*(mini|studio|book|pro)\b|mac\s*os|\bmacos\b|\bos\s*x\b/.test(t)
-  ) {
+export function detectOs(title: string, text: string, brand = ""): string {
+  const ti = title.toLowerCase();
+  const tx = text.toLowerCase();
+  if (brand.toLowerCase() === "apple" || /\bmacbook\b|\bimac\b|\bmac\s*(mini|studio|pro)\b/.test(ti)) {
     return "macOS";
   }
-  if (/chrome\s*os|chromebook/.test(t)) return "ChromeOS";
-  if (/free\s*dos|freedos|\bdos\b|no[-\s]+os\b|without\s+os|بدون\s*نظام/.test(t)) return "DOS";
+  if (/chrome\s*os|chromebook/.test(tx)) return "ChromeOS";
+  if (/free\s*dos|freedos|\bdos\b|no[-\s]+os\b|without\s+os|بدون\s*نظام/.test(tx)) return "DOS";
   return "Windows 11";
 }
 
@@ -211,7 +210,7 @@ export function normalizeSpecs(s: SpecSignals): LaptopSpecs {
     ...(display.display_refresh_hz ? { display_refresh_hz: display.display_refresh_hz } : {}),
     battery_hours: battery_match ? parseInt(battery_match[1], 10) : 6,
     weight_kg: weight_match ? parseFloat(weight_match[1]) : defaultWeight(display.display_inch),
-    os: detectOs(text, s.brand ?? ""),
+    os: detectOs(s.title ?? "", text, s.brand ?? ""),
     release_year: parseYear(text),
     arabic_keyboard: /arabic|عربي/.test(text) || undefined,
     build_quality,
