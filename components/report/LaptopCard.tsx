@@ -5,7 +5,7 @@ import { FitScore } from "@/components/ui/FitScore";
 import { PriceTag } from "@/components/ui/PriceTag";
 import { Icon } from "@/components/ui/Icon";
 import { SpecSignal } from "@/components/report/SpecSignal";
-import { TrustBadge } from "@/components/report/TrustBadge";
+import { Tip } from "@/components/ui/Tip";
 import { UI } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -72,76 +72,85 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
         <SpecSignal icon="gpu" code="GPU" value={s.gpu} />
       </div>
 
-      {highlight && (
-        <div className="flex flex-wrap gap-2">
-          {listing.store_name && <TrustBadge icon="store" label={listing.store_name} />}
-          {roi_score >= 70 && <TrustBadge icon="value" label="قيمة عالية" verified />}
-        </div>
+      {/* One short "why" line, then everything else folds into tap-chips (mobile-first). */}
+      {reasons[0] && (
+        <p className="flex gap-2 text-sm leading-relaxed text-[var(--color-muted)]">
+          <span className="mt-0.5 shrink-0 text-[var(--color-success)]">
+            <Icon name="check" size={16} />
+          </span>
+          <span>{reasons[0]}</span>
+        </p>
       )}
 
-      {reasons.length > 0 && (
-        <ul className="flex flex-col gap-2">
-          {reasons.slice(0, 3).map((r, i) => (
-            <li
-              key={i}
-              className="flex gap-2 text-sm leading-relaxed text-[var(--color-muted)]"
-            >
-              <span className="mt-0.5 shrink-0 text-[var(--color-success)]">
-                <Icon name="check" size={16} />
-              </span>
-              <span>{r}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {warnings.length > 0 && (
-        <ul className="flex flex-col gap-2">
-          {warnings.slice(0, 3).map((w, i) => (
-            <li
-              key={i}
-              className="flex gap-2 text-sm leading-relaxed text-[var(--color-warning)]"
-            >
-              <span className="mt-0.5 shrink-0">
-                <Icon name="alert" size={16} />
-              </span>
-              <span>{w}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {review && (review.summary || review.pros.length > 0 || review.cons.length > 0) && (
-        <div className="rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-surface)] p-3">
-          <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-[var(--color-muted)]">
-            <Icon name="check" size={14} />
-            <span dir="auto">حسب اختبارات {review.source_name}</span>
-          </div>
-          {review.summary && (
-            <p className="text-xs leading-relaxed text-[var(--color-ink)]">{review.summary}</p>
-          )}
-          {review.pros.length > 0 && (
-            <p className="mt-1.5 text-xs leading-relaxed text-[var(--color-success)]">
-              + {review.pros.slice(0, 3).join("، ")}
-            </p>
-          )}
-          {review.cons.length > 0 && (
-            <p className="mt-1 text-xs leading-relaxed text-[var(--color-warning)]">
-              − {review.cons.slice(0, 3).join("، ")}
-            </p>
-          )}
-          {review.source_url && (
-            <a
-              href={review.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1.5 inline-block text-[11px] text-[var(--color-faint)] underline"
-            >
-              المصدر: {review.source_name}.com
-            </a>
-          )}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-2">
+        {reasons.length > 1 && (
+          <Tip
+            tone="success"
+            trigger={
+              <>
+                <Icon name="check" size={13} /> +{reasons.length - 1}
+              </>
+            }
+          >
+            <ul className="space-y-1.5">
+              {reasons.map((r, i) => (
+                <li key={i} className="flex gap-1.5">
+                  <span className="shrink-0 text-[var(--color-success)]">✓</span>
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ul>
+          </Tip>
+        )}
+        {warnings.length > 0 && (
+          <Tip
+            tone="warning"
+            trigger={
+              <>
+                <Icon name="alert" size={13} /> {warnings.length} {UI.warnings}
+              </>
+            }
+          >
+            <ul className="space-y-1.5">
+              {warnings.map((w, i) => (
+                <li key={i} className="flex gap-1.5">
+                  <span className="shrink-0">⚠</span>
+                  <span>{w}</span>
+                </li>
+              ))}
+            </ul>
+          </Tip>
+        )}
+        {review && (review.summary || review.pros.length > 0 || review.cons.length > 0) && (
+          <Tip trigger={<span dir="auto">حسب {review.source_name}</span>}>
+            <div className="space-y-1.5">
+              <p className="font-semibold text-[var(--color-muted)]" dir="auto">
+                اختبارات {review.source_name}
+              </p>
+              {review.summary && <p>{review.summary}</p>}
+              {review.pros.length > 0 && (
+                <p className="text-[var(--color-success)]">+ {review.pros.join("، ")}</p>
+              )}
+              {review.cons.length > 0 && (
+                <p className="text-[var(--color-warning)]">− {review.cons.join("، ")}</p>
+              )}
+              {review.source_url && (
+                <a
+                  href={review.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-[var(--color-faint)] underline"
+                >
+                  {review.source_name}.com
+                </a>
+              )}
+            </div>
+          </Tip>
+        )}
+        {roi_score >= 70 && (
+          <span className="text-xs font-semibold text-[var(--color-muted)]">قيمة عالية ✓</span>
+        )}
+      </div>
 
       {listing.url && (
         <a
