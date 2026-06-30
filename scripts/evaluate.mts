@@ -14,6 +14,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { fetchAllListings } from "@/lib/data/listings";
 import { generateFollowUpQuestions } from "@/lib/ai/questions";
 import { buildRecommendation } from "@/lib/ai/recommend";
+import { buildRetrievalQuery, retrieveKnowledge, formatGrounding } from "@/lib/ai/rag/retrieve";
 
 const OUT = process.argv[2] || "eval-results.json";
 
@@ -80,12 +81,17 @@ const results = [];
 for (const p of PERSONAS) {
   console.error(`running: ${p.label}`);
   const { questions } = await generateFollowUpQuestions(p.basic);
-  const r = await buildRecommendation(p.basic, p.answers, listings);
+  // Retrieve RAG grounding exactly like sessions.ts does, so the harness exercises the
+  // real grounded pipeline (not the ungrounded shortcut it used before).
+  const grounding = formatGrounding(await retrieveKnowledge(supabase, buildRetrievalQuery(p.basic, p.answers)));
+  const r = await buildRecommendation(p.basic, p.answers, listings, grounding);
   results.push({
     persona: p.label,
     expectation: p.expect,
     budget: `${p.basic.budget_min}-${p.basic.budget_max} KWD`,
     use_case: p.basic.primary_use_case,
+    rag_grounded: grounding.length > 0,
+    rag_chars: grounding.length,
     answers: p.answers.map((a) => `${a.question_text} → ${a.answer_value}`),
     followup_questions: questions.map((q) => ({ q: q.question_text, opts: q.options?.map((o) => o.label) })),
     spec_os_min: r.spec.spec_range.minimum.os,
