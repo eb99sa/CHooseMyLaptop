@@ -4,10 +4,11 @@ import { Badge } from "@/components/ui/Badge";
 import { FitScore } from "@/components/ui/FitScore";
 import { PriceTag } from "@/components/ui/PriceTag";
 import { Icon } from "@/components/ui/Icon";
+import { SpecBar } from "@/components/report/SpecBar";
 import { SpecReveal } from "@/components/report/SpecReveal";
 import { Tip } from "@/components/ui/Tip";
 import { UI } from "@/lib/i18n";
-import { specMeters, shortLaptopName } from "@/lib/specView";
+import { specMeters, shortLaptopName, tierWord, techSpecs } from "@/lib/specView";
 import { cn } from "@/lib/utils";
 
 interface LaptopCardProps {
@@ -61,8 +62,15 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
         <FitScore value={final_score} size={72} mode="ten" />
       </header>
 
-      {/* Front shows only the /10 rating; the benefit bars fold behind a flip. */}
-      <SpecReveal meters={specMeters(s)} />
+      {/* Front: a plain rating for every aspect — no component names, no jargon. */}
+      <div className="grid grid-cols-1 gap-x-5 gap-y-3 min-[400px]:grid-cols-2">
+        {specMeters(s).map((m) => (
+          <SpecBar key={m.key} label={m.label} level={m.level} note={tierWord(m.level)} />
+        ))}
+      </div>
+
+      {/* The technical detail (names, GB, GPU model) folds away for tech-savvy users. */}
+      <SpecReveal specs={techSpecs(s)} />
 
       {/* One short "why" line, then everything else folds into tap-chips (mobile-first). */}
       {reasons[0] && (

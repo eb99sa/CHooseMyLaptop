@@ -1,22 +1,20 @@
 import { cn } from "@/lib/utils";
 
 interface SpecBarProps {
-  label: string; // what the spec means (e.g. «القوة والسرعة»)
+  label: string; // what the spec means for the user (e.g. «الألعاب والرسوميات»)
   level: number; // 0..100
-  value: string; // the tech detail, secondary
+  note?: string; // plain rating word (e.g. «ممتاز») — NOT tech jargon
   className?: string;
 }
 
-// A spec shown as what it MEANS + a strength bar. The tech value sits muted at the end so
-// tech-savvy users still see it, without the jargon dominating.
-export function SpecBar({ label, level, value, className }: SpecBarProps) {
+// An aspect shown as what it MEANS + a strength bar + a plain rating word. No component
+// names, no GB, no integrated-vs-dedicated — that lives behind the flip.
+export function SpecBar({ label, level, note, className }: SpecBarProps) {
   return (
     <div className={cn("space-y-1", className)}>
       <div className="flex items-baseline justify-between gap-2 text-xs">
         <span className="font-semibold text-[var(--color-ink)]">{label}</span>
-        <span className="truncate text-[var(--color-faint)]" style={{ unicodeBidi: "plaintext" }}>
-          {value}
-        </span>
+        {note && <span className="text-[var(--color-muted)]">{note}</span>}
       </div>
       <div
         className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-line)]"
