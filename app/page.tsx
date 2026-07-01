@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/ui/SiteHeader";
+import MagicBento from "@/components/landing/MagicBento";
 import { APP_NAME, UI, USE_CASE_LABELS, USE_CASE_ORDER } from "@/lib/i18n";
 // The realistic laptop now lives in the global background (components/landing/
 // BackgroundLaptop.tsx, mounted in the root layout), so the hero shows it too.
@@ -104,7 +105,7 @@ export default function HomePage() {
                 }}
               >
                 <div className="flex items-center justify-between">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--color-brand-200)] bg-[var(--color-brand-50)] text-[var(--color-brand-700)]">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-surface-2)] text-[var(--color-ink)]">
                     <step.Icon />
                   </span>
                   <span className="font-mono text-3xl font-bold text-[var(--color-line-strong)]">
@@ -122,6 +123,32 @@ export default function HomePage() {
           </ol>
         </section>
 
+        {/* ---- Why us: interactive capability bento (MagicBento, EMO-themed) ---- */}
+        <section className="pb-20 sm:pb-28">
+          <div className="text-center">
+            <span className="font-mono text-[0.6875rem] font-medium text-[var(--color-muted)]">
+              شنو يميّزنا
+            </span>
+            <h2 className="mt-4 text-2xl font-bold text-[var(--color-ink)] sm:text-3xl">
+              ليش تختار لابتوبي
+            </h2>
+          </div>
+          <div className="mt-12 flex justify-center">
+            <MagicBento
+              textAutoHide
+              enableStars
+              enableSpotlight
+              enableBorderGlow
+              enableTilt
+              enableMagnetism
+              clickEffect
+              spotlightRadius={300}
+              particleCount={12}
+              glowColor="158, 158, 255"
+            />
+          </div>
+        </section>
+
         {/* ---- Use cases ---- */}
         <section className="pb-20 sm:pb-28">
           <p className="text-center text-sm font-semibold text-[var(--color-muted)]">
@@ -131,7 +158,7 @@ export default function HomePage() {
             {USE_CASE_ORDER.map((useCase) => (
               <span
                 key={useCase}
-                className="chip border border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-ink)] transition-colors hover:border-[var(--color-brand-500)] hover:text-[var(--color-brand-700)]"
+                className="chip border border-[var(--color-line-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] transition-colors hover:border-[var(--color-ink)]"
               >
                 {USE_CASE_LABELS[useCase]}
               </span>
