@@ -49,10 +49,10 @@ export function SpecBlock({ title, target, tone = "neutral" }: SpecBlockProps) {
   return (
     <div
       className={cn(
-        "h-full rounded-[var(--radius-card)] border p-5",
-        tone === "brand"
-          ? "border-[var(--color-brand-200)] bg-[var(--color-brand-50)]"
-          : "border-[var(--color-line)] bg-[var(--color-surface)]",
+        // Nested inside the report's outer Card — differentiated by fill depth,
+        // NOT a competing border (EMO: only the outer card carries an edge).
+        "h-full rounded-[var(--radius-md)] p-5",
+        tone === "brand" ? "bg-[var(--color-surface-2)]" : "bg-[var(--color-surface-sunken)]",
       )}
     >
       <h4 className="mb-3 text-base font-bold text-[var(--color-ink)]">{title}</h4>

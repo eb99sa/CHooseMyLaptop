@@ -41,7 +41,7 @@ export function QuestionCard({
   nextDescribedBy,
 }: QuestionCardProps) {
   return (
-    <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line)] bg-[var(--color-surface)] shadow-[var(--shadow-lift)]">
+    <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line-strong)] bg-[var(--color-surface)]">
       <div
         className="flex h-[38px] items-center gap-2 border-b border-[var(--color-line)] px-4"
         style={{ background: "linear-gradient(180deg, var(--color-surface), var(--color-surface-2))" }}

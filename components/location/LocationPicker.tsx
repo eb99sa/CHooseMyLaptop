@@ -316,7 +316,7 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
             {showListbox && (
               <ul
                 id={listboxId}
-                className="absolute z-20 mt-1 w-full overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] shadow-lg"
+                className="absolute z-20 mt-1 w-full overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line-strong)] bg-[var(--color-surface)]"
                 role="listbox"
                 aria-label={UI.searchCityArea}
               >

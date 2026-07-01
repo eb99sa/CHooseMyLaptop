@@ -31,18 +31,24 @@ export function OptionChip({
       className={cn(
         "flex w-full items-center gap-3 rounded-[var(--radius-sm)] border px-4 py-3.5 text-start transition-all",
         selected
-          ? "border-transparent shadow-[-6px_-6px_14px_rgba(255,255,255,0.92),7px_7px_18px_rgba(20,24,31,0.14),0_0_22px_rgba(53,224,216,0.30)]"
+          ? "border-transparent"
           : "border-[var(--color-line-strong)] bg-[var(--color-surface)] hover:-translate-y-px hover:border-[var(--color-ink)] hover:shadow-[var(--shadow-sm)]",
         className,
       )}
-      style={selected ? { background: "linear-gradient(145deg, #ffffff, #eceef1)" } : undefined}
+      // Selected = softly extruded neumorphism; the surface + shadow are theme
+      // tokens (--chip-selected-*) so the raised look inverts correctly in dark.
+      style={
+        selected
+          ? { background: "var(--chip-selected-bg)", boxShadow: "var(--chip-selected-shadow)" }
+          : undefined
+      }
     >
       <span
         className={cn(
           "grid h-5 w-5 shrink-0 place-items-center border transition-all",
           multi ? "rounded-[var(--radius-xs)]" : "rounded-full",
           selected
-            ? "border-[var(--color-ink)] bg-[var(--color-ink)] text-[var(--color-on-brand)] shadow-[0_0_12px_rgba(53,224,216,0.45)]"
+            ? "border-[var(--color-ink)] bg-[var(--color-ink)] text-[var(--color-on-brand)] shadow-[0_0_12px_rgba(158,158,255,0.5)]"
             : "border-[var(--color-line-strong)] bg-[var(--color-surface)] text-transparent",
         )}
       >

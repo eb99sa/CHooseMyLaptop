@@ -28,7 +28,7 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
     <article
       className={cn(
         "card flex h-full flex-col gap-4 p-5",
-        highlight && "shadow-[var(--shadow-lift)] ring-1 ring-[var(--color-line-strong)]",
+        highlight && "ring-1 ring-[var(--color-line-strong)]",
       )}
     >
       <header className="flex items-start justify-between gap-3">

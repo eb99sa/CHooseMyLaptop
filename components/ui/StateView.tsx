@@ -18,7 +18,7 @@ export function StateView({ icon, title, body, tone = "default", as: Heading = "
   return (
     <div className="flex flex-col items-center gap-4 px-6 py-16 text-center">
       <div
-        className="grid h-14 w-14 place-items-center rounded-[var(--radius-md)] border border-[var(--color-line-strong)] bg-[var(--color-surface)] shadow-[var(--shadow-soft)]"
+        className="grid h-14 w-14 place-items-center rounded-[var(--radius-md)] border border-[var(--color-line-strong)] bg-[var(--color-surface)]"
         style={{ color: tone === "danger" ? "var(--color-danger)" : "var(--color-muted)" }}
       >
         <Icon name={icon} size={26} />

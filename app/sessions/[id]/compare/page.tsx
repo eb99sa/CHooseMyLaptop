@@ -96,8 +96,7 @@ export default async function ComparePage({ params }: PageProps) {
                         style={{ unicodeBidi: "plaintext" }}
                         className={cn(
                           "border-b border-[var(--color-line)] p-4 text-start align-top",
-                          isBest &&
-                            "bg-[var(--color-canvas-veil)] shadow-[inset_0_2px_0_var(--scene-cyan)]",
+                          isBest && "bg-[var(--color-canvas-veil)]",
                         )}
                       >
                         <div className="space-y-1.5">

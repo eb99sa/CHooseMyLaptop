@@ -26,14 +26,13 @@ interface ChartsProps {
   locationSources: Datum[];
 }
 
-// Grayscale ramp for multi-slice pies: recharts SVG fill via var() is unreliable,
-// so we use fixed hexes that mirror the ink->mist tokens; achromatic per design contract.
-const GRAYSCALE = ["#111111", "#2b2e32", "#696e74", "#9aa0a6", "#ccd0d4", "#7e848c"];
-
-// Single-series bars use the ink token directly (var() works on Bar fill).
+// Grayscale ramp for multi-slice pies (recharts Cell fill wants a concrete
+// color). EMO is achromatic: distinct light grays read as slices on the charcoal
+// card. Single-series bars use the ink token directly (bone white on charcoal).
+const GRAYSCALE = ["#ffffff", "#c9c9c9", "#9d9d9d", "#e4e4e4", "#808080", "#b5b5b5"];
 const INK_FILL = "var(--color-ink)";
-// Hover cursor mirrors --color-ink at low alpha (var() unreliable inside recharts cursor).
-const CURSOR_FILL = "rgba(17,17,17,0.06)";
+// Hover cursor — bone at very low alpha (var() is unreliable inside the cursor rect).
+const CURSOR_FILL = "rgba(255,255,255,0.06)";
 
 const AXIS_STYLE = { fontSize: 12, fill: "var(--color-muted)" } as const;
 const tooltipStyle = {

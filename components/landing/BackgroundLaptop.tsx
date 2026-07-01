@@ -54,23 +54,25 @@ export default function BackgroundLaptop() {
         camera={{ position: [0, 0, -30], fov: 35 }}
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[10, 10, 8]} intensity={1.1} color="#ffffff" />
+          <ambientLight intensity={0.32} />
+          <directionalLight position={[10, 10, 8]} intensity={0.7} color="#ffffff" />
 
-          {/* Procedural studio env (no network HDRI) — a light dome + white
-              softboxes so the aluminium reads bright on the light page. */}
+          {/* Procedural studio env (no network HDRI) — a dark studio dome + dimmer
+              softboxes so the aluminium reads as metal in a dark room; the ember
+              spill (below) carries the accent, echoing the CTA filament. */}
           <Environment resolution={256} frames={1}>
             <mesh scale={60}>
               <sphereGeometry args={[1, 32, 32]} />
-              <meshBasicMaterial color="#e8ebf0" side={THREE.BackSide} />
+              <meshBasicMaterial color="#14181c" side={THREE.BackSide} />
             </mesh>
-            <Lightformer form="rect" intensity={5} color="#ffffff" position={[0, 5, 2]} rotation={[-Math.PI / 2, 0, 0]} scale={[10, 10, 1]} />
-            <Lightformer form="rect" intensity={4} color="#ffffff" position={[5, 3, -4]} rotation={[0, -Math.PI / 3, 0]} scale={[6, 8, 1]} />
-            <Lightformer form="rect" intensity={6} color="#ffffff" position={[0, 2, 4]} rotation={[0, 0, Math.PI / 4]} scale={[1.5, 8, 1]} />
+            <Lightformer form="rect" intensity={3} color="#ffffff" position={[0, 5, 2]} rotation={[-Math.PI / 2, 0, 0]} scale={[10, 10, 1]} />
+            <Lightformer form="rect" intensity={2.4} color="#ffffff" position={[5, 3, -4]} rotation={[0, -Math.PI / 3, 0]} scale={[6, 8, 1]} />
+            <Lightformer form="rect" intensity={3.6} color="#ffffff" position={[0, 2, 4]} rotation={[0, 0, Math.PI / 4]} scale={[1.5, 8, 1]} />
           </Environment>
 
-          {/* Bigger cyan point light so the emissive screen spills onto the deck. */}
-          <pointLight position={[6, 1.5, -3]} intensity={5} distance={16} color="#35e0d8" />
+          {/* Ember point light so the emissive screen spills onto the deck — the
+              product's own light source. */}
+          <pointLight position={[6, 1.5, -3]} intensity={6} distance={16} color="#f45500" />
 
           {/* Composed shot: pushed to the LEFT (opposite the RTL copy on the right),
               larger, lower third. rotation[0,π,0] faces the screen at the camera;
