@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { APP_NAME, UI, USE_CASE_LABELS, USE_CASE_ORDER } from "@/lib/i18n";
-// Hero scene: interactive WebGL chrome laptop, with the static CSS chrome
-// object (HeroChrome) as the SSR / reduced-motion / touch / no-WebGL fallback.
-import HeroScene from "@/components/landing/HeroScene";
+// The realistic laptop now lives in the global background (components/landing/
+// BackgroundLaptop.tsx, mounted in the root layout), so the hero shows it too.
 
 // Thin-line SVG step icons (no emoji — keeps the techno/minimalist register).
 function IconAnswer() {
@@ -44,7 +43,6 @@ export default function HomePage() {
 
       {/* ---- Hero: full-bleed isometric space scene; content floats inside ---- */}
       <section className="relative isolate flex min-h-[88vh] items-center overflow-hidden">
-        <HeroScene />
         {/* mist veil behind the (RTL, start-aligned) copy — keeps carbon text
             high-contrast over the chrome object without darkening the canvas */}
         <div

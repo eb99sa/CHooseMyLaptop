@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
 import { APP_NAME, APP_TAGLINE } from "@/lib/i18n";
-import CompanionLaptop from "@/components/landing/CompanionLaptop";
+import BackgroundLaptop from "@/components/landing/BackgroundLaptop";
 import "./globals.css";
 
 // Arabic-first + Latin sans. Heavy bias (400/500/600/700); no thin weights.
@@ -42,7 +42,7 @@ export default function RootLayout({
     >
       <body>
         {children}
-        <CompanionLaptop />
+        <BackgroundLaptop />
       </body>
     </html>
   );
