@@ -15,7 +15,7 @@ import type { Group, Mesh } from "three";
 const MODEL = "/models/mac-draco.glb";
 const HINGE_CLOSED = 1.575;
 const HINGE_OPEN = -0.425;
-const SCENE_EMBER = "#f45500"; // --scene accent — the ember filament (screen only)
+const SCENE_EMBER = "#ff4300"; // --scene accent — the ember filament (screen only)
 
 interface RealLaptopProps {
   openness?: number; // 0 = closed, 1 = fully open

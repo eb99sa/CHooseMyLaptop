@@ -9,10 +9,11 @@ interface OptionChipProps {
   multi?: boolean; // checkbox (square) vs single-select (round) indicator
   onClick?: () => void;
   className?: string;
+  tabIndex?: number; // roving tabindex when inside a radiogroup
 }
 
-// An answer node in the advisor flow. Selected = softly extruded neumorphism
-// with a faint scene-cyan halo + a carbon-filled check.
+// An answer node in the advisor flow. Selected = a subtly raised surface with an
+// ember ring (--chip-selected-*) and a white check.
 export function OptionChip({
   label,
   hint,
@@ -21,11 +22,13 @@ export function OptionChip({
   multi = false,
   onClick,
   className,
+  tabIndex,
 }: OptionChipProps) {
   return (
     <button
       type="button"
       onClick={onClick}
+      tabIndex={tabIndex}
       role={multi ? "checkbox" : "radio"}
       aria-checked={selected}
       className={cn(
@@ -48,7 +51,7 @@ export function OptionChip({
           "grid h-5 w-5 shrink-0 place-items-center border transition-all",
           multi ? "rounded-[var(--radius-xs)]" : "rounded-full",
           selected
-            ? "border-[var(--color-ink)] bg-[var(--color-ink)] text-[var(--color-on-brand)] shadow-[0_0_12px_rgba(158,158,255,0.5)]"
+            ? "border-[var(--color-ink)] bg-[var(--color-ink)] text-[var(--color-on-brand)]"
             : "border-[var(--color-line-strong)] bg-[var(--color-surface)] text-transparent",
         )}
       >
@@ -60,7 +63,7 @@ export function OptionChip({
         </span>
       )}
       <span className="flex min-w-0 flex-col">
-        <span className="text-base font-semibold text-[var(--color-ink)]">{label}</span>
+        <span className="text-base font-bold text-[var(--color-ink)]">{label}</span>
         {hint && <span className="text-xs leading-relaxed text-[var(--color-muted)]">{hint}</span>}
       </span>
     </button>

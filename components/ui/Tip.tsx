@@ -48,12 +48,17 @@ export function Tip({ trigger, children, tone = "neutral", className }: TipProps
       className={cn("relative inline-flex", className)}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={(e) => {
+        // Keep open while focus stays anywhere inside the wrapper (so a
+        // keyboard user can Tab into focusable tooltip content). Only close
+        // when focus leaves the wrapper entirely.
+        if (!ref.current?.contains(e.relatedTarget as Node | null)) setOpen(false);
+      }}
     >
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
         aria-expanded={open}
         aria-controls={tipId}
         aria-describedby={open ? tipId : undefined}

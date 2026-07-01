@@ -37,8 +37,8 @@ export function ScoreBar({ label, value, tone = "neutral", showValue = true }: S
         aria-label={label}
       >
         <div
-          className="h-full rounded-full transition-[width]"
-          style={{ width: `${v}%`, background: FILL[tone] }}
+          className="h-full w-full origin-[inline-start] rounded-full transition-transform"
+          style={{ transform: `scaleX(${v / 100})`, background: FILL[tone] }}
         />
       </div>
     </div>

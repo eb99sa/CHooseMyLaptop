@@ -1,57 +1,54 @@
 @import "tailwindcss";
 
 /* --------------------------------------------------------------------------
-   CHooseMyLaptop — "Electronic Materials Office" theme (dark-only).
-   Incandescent ember in a charcoal gallery: a matte #202020 canvas, ONE ember
-   (#f45500) CTA that glows like a filament, lavender (#9e9eff) links, white
-   type, and edges drawn by 1px ash (#9d9d9d) borders — never shadows (the only
-   shadows are the two button glows). Soft 20px radii throughout.
-   ADAPTED for the Arabic-first / RTL product: Arabic stays a readable sans
-   (IBM Plex Sans Arabic, not thin/serif); the thin Latin display + serif ride
-   only on Latin / numeric runs. Every text pair is AA-verified on charcoal.
+   CHooseMyLaptop — "Three" theme (dark-only).
+   Molten ember on gunmetal: a matte near-black canvas (#111) lit by a SINGLE
+   hot-orange spark (#ff4300) reserved for primary action + selected state.
+   Everything else is achromatic — white/silver/ash text, graphite hairlines.
+   Elevation is TONE ONLY (#111 → #181818 → #242424), never shadows or glow.
+   Type is a single heavy weight (700) — hierarchy comes from size + colour.
+   ADAPTED for the Arabic-first / RTL product: weight 700 suits Arabic (never
+   letter-space Arabic); functional semantic state colours are kept; the CTA
+   text is dark (#111, 5.44:1 AA — white on ember fails). AA-verified on #111.
 -------------------------------------------------------------------------- */
 @theme {
-  /* Families. Arabic-first sans is the workhorse. --font-display (Inter, 200/400)
-     is the thin Latin "whisper" for Latin display + numerals; --font-serif is the
-     editorial Latin body accent; --font-mono for Latin spec codes. */
+  /* Families. Arabic-first sans workhorse at 700; Inter for Latin display /
+     numerals; mono for Latin spec codes; serif kept for the rare Latin body. */
   --font-sans: var(--font-plex-arabic), "IBM Plex Sans Arabic", "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
-  --font-display: var(--font-inter), "Inter", "Manrope", var(--font-plex-arabic), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-source-serif), "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-display: var(--font-inter), "Inter", var(--font-plex-arabic), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), "Source Serif 4", Georgia, serif;
   --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, "Cascadia Code", monospace;
 
-  /* Surfaces — the charcoal gallery. Cards sit on the SAME charcoal as the
-     canvas; 1px ash borders (not surface shifts or shadows) define every edge. */
-  --color-canvas: #202020;        /* studio floor — never pure black */
-  --color-canvas-deep: #1a1a1a;   /* recessed well */
-  --color-surface: #202020;       /* card matte — same as canvas */
-  --color-surface-solid: #202020; /* back-compat alias (opaque tooltip bg) */
-  --color-ink: #ffffff;           /* bone white — carries all type hierarchy */
-  --color-muted: #9d9d9d;         /* ash — the single middle gray (AA 6.0:1 on charcoal) */
-  --color-line: #363636;          /* subtle internal divider */
-  --color-line-strong: #9d9d9d;   /* visible ash edge — cards, controls (AA 6.0:1) */
+  /* Surfaces — void → obsidian → charcoal. Elevation is the tone step itself. */
+  --color-canvas: #111111;        /* void — page canvas (one step off pure black) */
+  --color-canvas-deep: #0d0d0d;   /* recessed well */
+  --color-surface: #181818;       /* obsidian — card, one step lighter than canvas */
+  --color-surface-solid: #181818; /* opaque tooltip bg */
+  --color-ink: #ffffff;           /* headlines / emphasis */
+  --color-muted: #999999;         /* ash — muted body (AA 6.6:1 on canvas) */
+  --color-line: #343434;          /* graphite — subtle divider / card hairline */
+  --color-line-strong: #666666;   /* steel — control border (3.3:1, meets 1.4.11) */
 
-  /* "Brand" = the ember. The single filled action per view is #f45500 with a
-     30px orange bloom; its text is carbon black (6.15:1 AA — white would fail). */
-  --color-brand-50: #262626;   /* subtle neutral lift (no stray orange) */
-  --color-brand-100: #2a2a2a;
-  --color-brand-200: #303030;
-  --color-brand-300: #3a3a3a;
-  --color-brand-400: #444444;
-  --color-brand-500: #ff6a1a;  /* CTA hover — brighter filament */
-  --color-brand-600: #f45500;  /* CTA fill — ember orange */
-  --color-brand-700: #d94800;  /* pressed / deepest */
+  /* "Brand" = the single ember spark. Filled CTA only; dark text (white fails AA). */
+  --color-brand-50: #1f1a18;   /* barely-warm dark tint (report narrative fill) */
+  --color-brand-100: #241d1a;
+  --color-brand-200: #2c221d;
+  --color-brand-300: #3a2a22;
+  --color-brand-400: #4a352b;
+  --color-brand-500: #ff5a1f;  /* CTA hover — brighter spark */
+  --color-brand-600: #ff4300;  /* ember — the one chromatic surface */
+  --color-brand-700: #e63c00;  /* pressed */
 
-  --color-on-brand: #000000;   /* carbon text on the ember CTA */
+  --color-on-brand: #111111;   /* dark text on the ember CTA (5.44:1 AA) */
 
-  /* Semantic state — functional (not brand). Lighter tones, AA on charcoal. */
+  /* Semantic state — functional only (not brand). AA on #111/#181818. */
   --color-success: #4fd08a;
   --color-warning: #e3ad4f;
   --color-danger: #f0766c;
 
-  --radius-card: 20px;         /* the system commits to soft, large radii */
+  --radius-card: 22px;         /* soft cards, a friendly counterweight to the void */
 
-  /* Elevation — EMO uses NO card/nav/image shadows; edges are borders. The only
-     shadows in the system are the two button glows. */
+  /* No card/section shadows — Three communicates elevation through tone alone. */
   --shadow-soft: none;
   --shadow-lift: none;
 }
@@ -63,45 +60,44 @@
   color-scheme: dark;
 
   /* ---- Color extras ---- */
-  --color-canvas-veil: #262626;
-  --color-surface-2: #262626;      /* faint lift for header/title strips */
-  --color-surface-sunken: #1a1a1a; /* input well — recessed charcoal */
-  --color-ink-soft: #eaeaea;       /* mid felt — softened white */
-  --color-faint: #9d9d9d;          /* one ash gray for micro-labels too (AA 6.0:1) */
-  --color-line-faint: #2a2a2a;
+  --color-canvas-veil: #1c1c1c;
+  --color-surface-2: #242424;      /* subtle lift for strips / hover */
+  --color-surface-sunken: #111111; /* input well — recessed to the void */
+  --color-ink-soft: #cacaca;       /* silver — dominant primary body text */
+  --color-faint: #8d8d8d;          /* fog — micro-labels (AA on canvas/surface) */
+  --color-line-faint: #242424;
 
-  /* ---- The one cool chromatic: lavender for links + outlined secondary/nav ---- */
-  --color-link: #9e9eff;
+  /* ---- Links / selected are NOT a second colour: white links, ORANGE selected ---- */
+  --color-link: #ffffff;           /* inline links + secondary text-actions (white) */
 
-  /* ---- Scene accent = the ember filament (the 3D screen is the product light,
-          echoing the CTA). Repointed from the old cyan; scene + tiny state dots only. ---- */
-  --scene-cyan: #f45500;
-  --scene-green: #46e08a;
-  --scene-blue: #5aa9ff;
-  --scene-cyan-soft: rgba(244, 85, 0, 0.16);
-  --scene-green-soft: rgba(70, 224, 138, 0.16);
-  --scene-blue-soft: rgba(90, 169, 255, 0.16);
-  --scene-line: rgba(244, 85, 0, 0.55);
-  --scene-line-dim: rgba(244, 85, 0, 0.22);
+  /* ---- Scene accent = the ember spark (repointed from cyan). Scene + selected only. ---- */
+  --scene-cyan: #ff4300;
+  --scene-green: #4fd08a;
+  --scene-blue: #8d8d8d;
+  --scene-cyan-soft: rgba(255, 67, 0, 0.16);
+  --scene-green-soft: rgba(79, 208, 138, 0.16);
+  --scene-blue-soft: rgba(141, 141, 141, 0.16);
+  --scene-line: rgba(255, 67, 0, 0.55);
+  --scene-line-dim: rgba(255, 67, 0, 0.22);
 
-  /* ---- Chrome material stops (silver CSS object + logo mark — reads on charcoal) ---- */
+  /* ---- Chrome material stops (silver CSS object + logo mark) ---- */
   --chrome-hi: #ffffff;
-  --chrome-1: #eaecef;
-  --chrome-2: #c2c7cd;
-  --chrome-3: #9aa0a8;
-  --chrome-4: #d9dde1;
-  --chrome-lo: #7e848c;
-  --chrome-tint: #f4b89a;
+  --chrome-1: #e4e4e4;
+  --chrome-2: #bfbfbf;
+  --chrome-3: #8d8d8d;
+  --chrome-4: #cacaca;
+  --chrome-lo: #666666;
+  --chrome-tint: #ff8a5a;
 
-  /* ---- Semantic state extras (tints are subtle washes on charcoal) ---- */
-  --color-success-neon: #46e08a;
-  --color-warning-neon: #e8a83d;
-  --color-danger-neon: #ff6f6f;
+  /* ---- Semantic state extras (subtle washes on the void) ---- */
+  --color-success-neon: #4fd08a;
+  --color-warning-neon: #e3ad4f;
+  --color-danger-neon: #f0766c;
   --tint-success: rgba(79, 208, 138, 0.12);
   --tint-warning: rgba(227, 173, 79, 0.12);
   --tint-danger: rgba(240, 118, 108, 0.12);
 
-  /* ---- Semantic aliases (prefer these in product UI) ---- */
+  /* ---- Semantic aliases ---- */
   --text-primary: var(--color-ink);
   --text-secondary: var(--color-muted);
   --text-tertiary: var(--color-faint);
@@ -112,42 +108,41 @@
   --action-primary: var(--color-brand-600);
 
   /* ---- Type scale (rem) ---- */
-  --text-2xs: 0.6875rem;  /* 11 — micro mono labels */
-  --text-xs: 0.75rem;     /* 12 */
-  --text-sm: 0.875rem;    /* 14 */
-  --text-base: 1rem;      /* 16 — body */
-  --text-lg: 1.125rem;    /* 18 */
-  --text-xl: 1.375rem;    /* 22 */
-  --text-2xl: 1.75rem;    /* 28 */
-  --text-3xl: 2.25rem;    /* 36 */
-  --text-4xl: 3rem;       /* 48 */
-  --text-5xl: 3.75rem;    /* 60 */
-  --text-6xl: 4.5rem;     /* 72 — hero headline */
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --text-4xl: 3rem;
+  --text-5xl: 3.75rem;
+  --text-6xl: 4.25rem;   /* ~68px display ceiling */
 
   /* ---- Line height ---- */
   --leading-none: 1;
-  --leading-tight: 1.06;   /* display stacks into a column of breath */
-  --leading-snug: 1.2;
-  --leading-normal: 1.5;
-  --leading-relaxed: 1.7;
+  --leading-tight: 1;      /* display compresses to 1.0 */
+  --leading-snug: 1.1;
+  --leading-normal: 1.25;
+  --leading-relaxed: 1.4;
 
-  /* ---- Tracking (never letter-space Arabic) ---- */
-  --tracking-tight: -0.02em;
-  --tracking-display: -0.03em;  /* thin Latin display tightens */
-  --tracking-normal: 0;
-  --tracking-wide: 0.06em;
-  --tracking-mono: 0.2em;
+  /* ---- Tracking — tight negative on LATIN display; NEVER letter-space Arabic ---- */
+  --tracking-tight: -0.025em;
+  --tracking-display: -0.056em;
+  --tracking-normal: -0.011em;
+  --tracking-wide: 0.04em;
+  --tracking-mono: 0.16em;
   --tracking-arabic: 0;
 
-  /* ---- Weights (Arabic stays readable; the thin end is for Latin display only) ---- */
-  --weight-extralight: 200;
-  --weight-regular: 400;
-  --weight-medium: 500;
-  --weight-semibold: 600;
+  /* ---- Weights — 700 is the signature; a single heavy weight, everywhere ---- */
+  --weight-regular: 700;
+  --weight-medium: 700;
+  --weight-semibold: 700;
   --weight-bold: 700;
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
+  --font-weight-normal: 700;
+  --font-weight-medium: 700;
+  --font-weight-semibold: 700;
   --font-weight-bold: 700;
   --font-weight-extrabold: 700;
 
@@ -171,36 +166,36 @@
   --container-md: 640px;
   --container-lg: 880px;
   --container-xl: 1120px;
-  --container-2xl: 1200px;  /* EMO page max-width */
+  --container-2xl: 1200px;
 
-  --pad-card: 24px;
-  --pad-panel: 32px;
+  --pad-card: 20px;
+  --pad-panel: 24px;
   --pad-tile: 12px;
   --gap-tight: 8px;
   --gap-base: 16px;
-  --gap-loose: 24px;
+  --gap-loose: 20px;
 
-  /* ---- Radius scale — soft, large; nothing below ~12px ("commit to big radii") ---- */
-  --radius-xs: 12px;
-  --radius-sm: 16px;
-  --radius-md: 18px;
-  --radius-lg: 20px;
-  --radius-xl: 20px;
-  --radius-2xl: 24px;
-  --radius-pill: 999px;      /* badges only */
+  /* ---- Radius — soft: badges 7 / buttons 15 / cards 22 / pill 999 ---- */
+  --radius-xs: 7px;
+  --radius-sm: 12px;
+  --radius-md: 15px;   /* buttons */
+  --radius-lg: 22px;   /* cards */
+  --radius-xl: 25px;
+  --radius-2xl: 28px;
+  --radius-pill: 999px;
 
-  /* ---- Shadows — EMO reserves shadows for the two buttons; everything else is flat + bordered ---- */
+  /* ---- Shadows — NONE except… none. Three bans shadow + glow; tone is elevation. ---- */
   --shadow-xs: none;
   --shadow-sm: none;
   --shadow-inset: none;
-  --shadow-cta: 0 0 30px rgba(244, 85, 0, 0.6);          /* ember bloom */
-  --shadow-cta-hover: 0 0 42px rgba(244, 85, 0, 0.75);
-  --shadow-ghost: 0 0 30px rgba(255, 255, 255, 0.3);     /* white ghost echo */
-  --shadow-chrome: 0 30px 60px rgba(0, 0, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4);
-  --glow-ember: 0 0 30px rgba(244, 85, 0, 0.6);
-  --glow-soft: 0 0 10px rgba(244, 85, 0, 0.45);
+  --shadow-cta: none;
+  --shadow-cta-hover: none;
+  --shadow-ghost: none;
+  --shadow-chrome: none;
+  --glow-ember: none;
+  --glow-soft: none;
 
-  /* ---- Motion (calm, no bounce; honour reduced-motion) ---- */
+  /* ---- Motion ---- */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
@@ -211,7 +206,7 @@
   --dur-slow: 420ms;
   --dur-scene: 1200ms;
 
-  /* ---- Depth / 3D ---- */
+  /* ---- Depth / z ---- */
   --z-base: 0;
   --z-scene-stage: 1;
   --z-scene-object: 2;
@@ -229,16 +224,13 @@
   --parallax-max: 18px;
   --scene-perspective: 1200px;
 
-  /* Decorative fills. */
-  --canvas-glow: #262626;   /* barely-there top vignette on the charcoal floor */
-  --stage-hi: #2a2a2a;
-  --chip-selected-bg: #262626;  /* selected answer = subtle lift + a lavender ring (below) */
-  --chip-selected-shadow: inset 0 0 0 1.5px var(--color-link), 0 0 18px rgba(158, 158, 255, 0.22);
+  /* Decorative fills — flat canvas (no vignette gradient); selected = orange ring. */
+  --canvas-glow: transparent;
+  --stage-hi: #1c1c1c;
+  --chip-selected-bg: #1f1a18;
+  --chip-selected-shadow: inset 0 0 0 1.5px var(--color-brand-600);
 }
 
-/* Default border color for bare `border` utilities. In @layer base so component
-   rules (.card / .btn-ghost / .input in @layer components) and inline border
-   utilities still win — an unlayered reset here would override them all. */
 @layer base {
   * {
     border-color: var(--color-line);
@@ -254,32 +246,30 @@ body {
   background-color: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  font-weight: 700; /* the single heavy weight — the signature */
+  letter-spacing: var(--tracking-normal);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   min-height: 100vh;
   position: relative;
 }
 
-/* The charcoal gallery: near-flat, a whisper of lift at the top so the floor
-   isn't dead. No nebula, no color — the ember lives only on the CTA + scene. */
+/* Flat void canvas — one continuous dark surface, no gradient decoration. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(70rem 48rem at 50% -18%, var(--canvas-glow), transparent 60%),
-    var(--color-canvas);
+  background: var(--color-canvas);
 }
 
-/* Restrained bone selection. */
 ::selection {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 67, 0, 0.28);
   color: var(--color-ink);
 }
 
-/* Focus: a high-contrast bone outline (white reads clearly on charcoal). */
+/* Focus: a high-contrast white outline (unmistakable on the void). */
 :focus-visible {
   outline: 2px solid var(--color-ink);
   outline-offset: 2px;
@@ -287,10 +277,10 @@ body::before {
 }
 
 @layer components {
-  /* Card matte — edge is a 1px ash border, never a shadow. */
+  /* Card — obsidian tone step + a graphite hairline; no shadow. */
   .card {
     background: var(--color-surface);
-    border: 1px solid var(--color-line-strong);
+    border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
     box-shadow: none;
     position: relative;
@@ -301,75 +291,74 @@ body::before {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: var(--radius-lg); /* soft 20px bar */
-    font-weight: 600;
-    padding: 0.78rem 1.5rem;
+    border-radius: var(--radius-md); /* 15px */
+    font-weight: 700;
+    padding: 0.7rem 1.4rem;
     border: 1px solid transparent;
     transition: transform 0.18s var(--ease-out), background 0.18s ease,
-      box-shadow 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+      border-color 0.18s ease, color 0.18s ease;
     cursor: pointer;
     line-height: 1.2;
   }
-  /* primary — the single ember action, lit from within by a 30px bloom */
+  /* primary — the one ember spark; dark text; NO glow (the orange is the signal) */
   .btn-primary {
     background: var(--color-brand-600);
     color: var(--color-on-brand);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-cta);
+    border-radius: var(--radius-md);
   }
   .btn-primary:hover {
     background: var(--color-brand-500);
-    box-shadow: var(--shadow-cta-hover);
     transform: translateY(-1px);
   }
-  /* ghost — lavender outlined secondary / nav action (the cool counterpoint) */
+  /* ghost — transparent, steel border, white text (the achromatic secondary) */
   .btn-ghost {
     background: transparent;
-    color: var(--color-link);
-    border: 1px solid var(--color-link);
+    color: var(--color-ink);
+    border: 1px solid var(--color-line-strong);
   }
   .btn-ghost:hover {
-    background: color-mix(in srgb, var(--color-link) 12%, transparent);
+    border-color: var(--color-ink);
     transform: translateY(-1px);
   }
-  /* quiet — lavender text-only */
+  /* quiet — text only, white */
   .btn-quiet {
     background: transparent;
-    color: var(--color-link);
+    color: var(--color-ink);
     padding-inline: 0.75rem;
     border-color: transparent;
   }
   .btn-quiet:hover {
-    color: var(--color-ink);
     background: var(--color-canvas-veil);
   }
   .btn-sm {
     font-size: var(--text-sm);
-    padding: 0.6rem 1rem;
+    padding: 0.55rem 1rem;
   }
   .btn-lg {
     font-size: var(--text-base);
-    padding: 1rem 1.9rem;
+    padding: 0.9rem 1.8rem;
   }
   .btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
     transform: none;
-    box-shadow: none;
   }
 
   .input {
     width: 100%;
+    min-height: 44px; /* comfortable tap target */
     background: var(--color-surface-sunken);
     border: 1px solid var(--color-line-strong);
-    border-radius: var(--radius-sm);
-    padding: 0.72rem 0.9rem;
+    border-radius: var(--radius-md);
+    padding: 0.7rem 0.95rem;
     font-size: 1rem;
+    font-weight: 700;
     color: var(--color-ink);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   .input::placeholder {
     color: var(--color-faint);
+    font-weight: 700;
   }
   .input:focus {
     outline: none;
@@ -381,34 +370,34 @@ body::before {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.28rem 0.75rem;
+    padding: 0.3rem 0.8rem;
     border-radius: var(--radius-pill);
     font-size: 0.8rem;
-    font-weight: 500;
+    font-weight: 700;
   }
 
-  /* Eyebrow — mono, spaced, uppercase micro-label (Latin; ash). */
+  /* Eyebrow — mono micro-label (fog). Use sparingly (not on every section). */
   .eyebrow {
     font-family: var(--font-mono);
     font-size: var(--text-2xs);
-    font-weight: var(--weight-medium);
+    font-weight: 700;
     letter-spacing: var(--tracking-mono);
     text-transform: uppercase;
     color: var(--color-faint);
     line-height: 1;
   }
 
-  /* Section label — the Tobias voice: thin Latin display, tight, uppercase. */
+  /* Section label — Latin display, tight negative tracking, uppercase. */
   .section-label {
     font-family: var(--font-display);
-    font-weight: var(--weight-regular);
+    font-weight: 700;
     letter-spacing: var(--tracking-display);
     text-transform: uppercase;
     color: var(--color-ink);
   }
 
-  /* Static chrome scene — the CSS fallback for the WebGL laptop (silver object
-     on charcoal). Ember core echoes the CTA filament. */
+  /* Static chrome scene — CSS fallback for the WebGL laptop (silver on void,
+     ember core echoing the spark). */
   .stage {
     overflow: hidden;
     background: radial-gradient(120% 90% at 50% 18%, var(--stage-hi) 0%,
@@ -423,10 +412,9 @@ body::before {
       var(--chrome-1) 0deg, var(--chrome-2) 40deg, var(--chrome-hi) 80deg,
       var(--chrome-3) 130deg, var(--chrome-4) 180deg, var(--chrome-lo) 225deg,
       var(--chrome-2) 280deg, var(--chrome-hi) 320deg, var(--chrome-1) 360deg);
-    box-shadow: var(--shadow-chrome),
-      inset 0 3px 8px rgba(255, 255, 255, 0.85),
-      inset 0 -12px 26px rgba(80, 86, 94, 0.42),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+    box-shadow: inset 0 3px 8px rgba(255, 255, 255, 0.55),
+      inset 0 -12px 26px rgba(0, 0, 0, 0.55),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.18);
   }
   .chrome__sheen {
     position: absolute;
@@ -444,7 +432,7 @@ body::before {
     pointer-events: none;
     opacity: 0.7;
     background: repeating-radial-gradient(circle at 50% 50%,
-      rgba(255, 255, 255, 0.1) 0 1px, rgba(80, 86, 94, 0.1) 1px 3px, transparent 3px 9px);
+      rgba(255, 255, 255, 0.1) 0 1px, rgba(80, 80, 80, 0.1) 1px 3px, transparent 3px 9px);
     -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 60%, transparent 78%);
     mask-image: radial-gradient(circle at 50% 50%, #000 60%, transparent 78%);
   }
@@ -454,17 +442,16 @@ body::before {
     border-radius: 16%;
     display: grid;
     place-items: center;
-    background: linear-gradient(145deg, #3a3e45, #14161b 55%, #2a2e34);
-    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.18),
-      inset 0 -2px 6px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.35);
+    background: linear-gradient(145deg, #2a2a2a, #101010 55%, #1e1e1e);
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.14),
+      inset 0 -2px 6px rgba(0, 0, 0, 0.6);
   }
   .chrome__core {
     width: 26%;
     height: 26%;
     border-radius: 999px;
-    background: radial-gradient(circle, var(--scene-cyan), rgba(244, 85, 0, 0.2) 60%, transparent 70%);
-    opacity: 0.6;
-    box-shadow: 0 0 18px rgba(244, 85, 0, 0.45);
+    background: radial-gradient(circle, var(--scene-cyan), rgba(255, 67, 0, 0.2) 60%, transparent 70%);
+    opacity: 0.7;
   }
 }
 
@@ -474,7 +461,6 @@ body::before {
   100% { transform: scaleX(1); opacity: 0.9; }
 }
 
-/* Entrance + ambient motion. */
 @keyframes fadeup {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }

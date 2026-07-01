@@ -46,6 +46,10 @@ export default function BackgroundLaptop() {
 
   if (!use3D) return null;
 
+  // Perf (audit P2): the back-office laptop is closed + static, so skip the WebGL
+  // scene entirely on /admin — no reason to run a continuous frameloop there.
+  if (pathname?.startsWith("/admin")) return null;
+
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: -1 }}>
       <Canvas
@@ -72,7 +76,7 @@ export default function BackgroundLaptop() {
 
           {/* Ember point light so the emissive screen spills onto the deck — the
               product's own light source. */}
-          <pointLight position={[6, 1.5, -3]} intensity={6} distance={16} color="#f45500" />
+          <pointLight position={[6, 1.5, -3]} intensity={6} distance={16} color="#ff4300" />
 
           {/* Composed shot: pushed to the LEFT (opposite the RTL copy on the right),
               larger, lower third. rotation[0,π,0] faces the screen at the camera;

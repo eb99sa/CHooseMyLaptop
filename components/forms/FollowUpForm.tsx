@@ -6,6 +6,7 @@ import { Card, CardMuted } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { OptionChip } from "@/components/ui/OptionChip";
+import { moveRadioFocus } from "@/lib/radioKeyboard";
 import { QuestionCard } from "@/components/ui/QuestionCard";
 import { NarrowingLoader } from "@/components/ui/NarrowingLoader";
 import type { AIQuestion, UserAnswer } from "@/lib/types";
@@ -209,13 +210,14 @@ function QuestionInput({ question, value, labelledBy, onSingle, onToggle }: Ques
 
   if (question_type === "boolean") {
     return (
-      <div role="radiogroup" aria-labelledby={labelledBy} className="flex flex-col gap-3">
+      <div role="radiogroup" aria-labelledby={labelledBy} onKeyDown={moveRadioFocus} className="flex flex-col gap-3">
         {YES_NO.map((opt) => (
           <OptionChip
             key={opt.value}
             label={opt.label}
             selected={value === opt.value}
             onClick={() => onSingle(opt.value)}
+            tabIndex={opt.value === (value ?? YES_NO[0]?.value) ? 0 : -1}
           />
         ))}
       </div>
@@ -224,13 +226,14 @@ function QuestionInput({ question, value, labelledBy, onSingle, onToggle }: Ques
 
   if (question_type === "single_select") {
     return (
-      <div role="radiogroup" aria-labelledby={labelledBy} className="flex flex-col gap-3">
+      <div role="radiogroup" aria-labelledby={labelledBy} onKeyDown={moveRadioFocus} className="flex flex-col gap-3">
         {(options ?? []).map((opt) => (
           <OptionChip
             key={opt.value}
             label={opt.label}
             selected={value === opt.value}
             onClick={() => onSingle(opt.value)}
+            tabIndex={opt.value === (value ?? (options ?? [])[0]?.value) ? 0 : -1}
           />
         ))}
       </div>
