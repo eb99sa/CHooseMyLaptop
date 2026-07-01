@@ -14,7 +14,7 @@ export function SpecBar({ label, level, note, className }: SpecBarProps) {
     <div className={cn("space-y-1", className)}>
       <div className="flex items-baseline justify-between gap-2 text-xs">
         <span className="font-semibold text-[var(--color-ink)]">{label}</span>
-        {note && <span className="text-[var(--color-muted)]">{note}</span>}
+        {note && <span className="font-semibold tabular-nums text-[var(--color-muted)]">{note}</span>}
       </div>
       <div
         className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-line)]"
