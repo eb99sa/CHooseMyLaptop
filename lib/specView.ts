@@ -25,6 +25,36 @@ export function specMeters(s: LaptopSpecs): SpecMeter[] {
   ];
 }
 
+/**
+ * A plain rating word for a 0..100 level — what a non-technical buyer reads at a
+ * glance ("gaming power: ممتاز"). No numbers, no jargon.
+ */
+export function tierWord(level: number): string {
+  if (level >= 82) return "ممتاز";
+  if (level >= 64) return "جيد جدًا";
+  if (level >= 45) return "جيد";
+  if (level >= 28) return "مقبول";
+  return "محدود";
+}
+
+/**
+ * The TECHNICAL details — component names, GB, GPU model, integrated-vs-dedicated.
+ * These live behind the flip (for tech-savvy users); the front never shows them.
+ */
+export function techSpecs(s: LaptopSpecs): { label: string; value: string }[] {
+  const gpu = !s.gpu || s.gpu.toLowerCase() === "integrated" ? "كرت مدمج" : s.gpu;
+  return [
+    { label: "المعالج", value: s.cpu },
+    { label: "الذاكرة", value: `${s.ram_gb}GB` },
+    { label: "التخزين", value: `${s.storage_gb}GB ${s.storage_type}` },
+    { label: "كرت الشاشة", value: gpu },
+    { label: "الشاشة", value: `${s.display_inch}"${s.display_panel ? ` ${s.display_panel}` : ""}` },
+    { label: "البطارية", value: `${s.battery_hours} ساعات` },
+    { label: "الوزن", value: `${s.weight_kg} كجم` },
+    { label: "نظام التشغيل", value: s.os },
+  ];
+}
+
 /** Plain "what you need" highlights derived from the recommended (ideal) spec target. */
 export function needHighlights(ideal: SpecTarget): string[] {
   const out: string[] = [];
