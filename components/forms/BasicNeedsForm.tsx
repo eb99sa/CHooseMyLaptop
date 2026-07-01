@@ -7,13 +7,11 @@ import { Field } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { NarrowingLoader } from "@/components/ui/NarrowingLoader";
 import { OptionChip } from "@/components/ui/OptionChip";
-import { LocationPicker } from "@/components/location/LocationPicker";
 import type { IconName } from "@/components/ui/Icon";
 import type {
   BasicNeeds,
   ConditionPref,
   Importance,
-  LocationInfo,
   ScreenSizePref,
   UseCase,
   Urgency,
@@ -30,8 +28,8 @@ import {
 } from "@/lib/i18n";
 
 // Page 1 form — collects the full BasicNeeds shape and creates a session,
-// then routes to the AI follow-up questions step. Anonymous: location is
-// chosen via LocationPicker, no country/city text inputs, no language field.
+// then routes to the AI follow-up questions step. Anonymous: no location
+// prompt (currency is chosen alongside the budget); location stays "skipped".
 
 interface FormErrors {
   budget?: string;
@@ -95,14 +93,6 @@ export function BasicNeedsForm() {
   const [budgetMin, setBudgetMin] = useState<string>("");
   const [budgetMax, setBudgetMax] = useState<string>("");
   const [currency, setCurrency] = useState<string>("KWD");
-  // Location is managed by the LocationPicker. Default to "skipped" until the
-  // user makes a choice; the currency stays in sync with whatever it supplies.
-  const [location, setLocation] = useState<LocationInfo>({
-    country: "",
-    city_or_area: "",
-    currency: "KWD",
-    source: "skipped",
-  });
   const [primaryUseCase, setPrimaryUseCase] = useState<UseCase | null>(null);
   const [portability, setPortability] = useState<Importance>("somewhat");
   const [batteryImportance, setBatteryImportance] = useState<Importance>("somewhat");
@@ -114,15 +104,6 @@ export function BasicNeedsForm() {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [pending, setPending] = useState(false);
-
-  // When the picker supplies a currency, auto-update the selector. The user can
-  // still override it afterwards via the <select>.
-  function handleLocationChange(loc: LocationInfo) {
-    setLocation(loc);
-    if (loc.currency && loc.source !== "skipped") {
-      setCurrency(loc.currency);
-    }
-  }
 
   function validate(): { ok: boolean; min: number; max: number } {
     const next: FormErrors = {};
@@ -154,9 +135,9 @@ export function BasicNeedsForm() {
       budget_min: budgetMin ? min : 0,
       budget_max: max,
       currency: currency.trim() || "KWD",
-      country: location.country,
-      city_or_area: location.city_or_area,
-      location_source: location.source,
+      country: "",
+      city_or_area: "",
+      location_source: "skipped",
       primary_use_case: primaryUseCase,
       portability,
       battery_importance: batteryImportance,
@@ -303,9 +284,6 @@ export function BasicNeedsForm() {
           )}
         </Field>
       </Card>
-
-      {/* Location */}
-      <LocationPicker value={location} onChange={handleLocationChange} />
 
       {/* Preferences */}
       <Card className="space-y-6 p-6">
