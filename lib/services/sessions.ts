@@ -10,6 +10,7 @@ import { buildRecommendation } from "@/lib/ai/recommend";
 import { buildRetrievalQuery, formatGrounding, retrieveKnowledge } from "@/lib/ai/rag/retrieve";
 import { fetchAllListings } from "@/lib/data/listings";
 import { createServiceClient } from "@/lib/supabase/service";
+import { safeEqual } from "@/lib/crypto";
 import {
   hashSessionToken,
   newSessionToken,
@@ -104,7 +105,7 @@ function isExpired(row: AnonymousSessionRow): boolean {
 /** Verify that the raw token matches the row's stored hash. */
 export async function tokenMatches(row: AnonymousSessionRow, token: string): Promise<boolean> {
   const hash = await hashSessionToken(token);
-  return hash === row.session_token_hash;
+  return safeEqual(hash, row.session_token_hash);
 }
 
 /**
@@ -134,6 +135,13 @@ export async function saveAnswersAndRecommend(
   sessionId: string,
   answers: UserAnswer[],
 ): Promise<FinalReport> {
+  // Idempotent: if the report was already built, return the stored one instead of
+  // re-running the (paid) AI pipeline — blocks re-POST abuse on an owned session.
+  const existing = await getSessionById(supabase, sessionId);
+  if (existing?.status === "completed" && existing.recommendation_result_json) {
+    return existing.recommendation_result_json as unknown as FinalReport;
+  }
+
   await supabase
     .from(TABLE)
     .update({ answers_json: answers, status: "answered" })

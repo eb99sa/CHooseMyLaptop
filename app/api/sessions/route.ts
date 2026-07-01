@@ -3,6 +3,7 @@ import { createServiceClient, isDbConfigured } from "@/lib/supabase/service";
 import { createAnonymousSession } from "@/lib/services/sessions";
 import { setSessionCookie } from "@/lib/session";
 import { normalizeBasicNeeds } from "@/lib/validation";
+import { rateLimitAllowed, clientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -33,13 +34,18 @@ export async function POST(req: Request) {
 
   try {
     const supabase = createServiceClient();
+    // Wallet guard: this anonymous endpoint fans out to paid LLM calls.
+    if (!(await rateLimitAllowed(supabase, `sessions:${clientIp(req)}`, 10, 3600))) {
+      return NextResponse.json(
+        { error: "rate_limited", message: "محاولات كثيرة. حاول بعد شوي." },
+        { status: 429 },
+      );
+    }
     const { sessionId, token } = await createAnonymousSession(supabase, basic);
     await setSessionCookie(sessionId, token);
     return NextResponse.json({ session_id: sessionId });
   } catch (err) {
-    return NextResponse.json(
-      { error: "server_error", message: (err as Error).message },
-      { status: 500 },
-    );
+    console.error("[api/sessions] error:", err);
+    return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
 }

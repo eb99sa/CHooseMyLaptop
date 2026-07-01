@@ -124,6 +124,10 @@ In the Supabase **SQL Editor**, run **in order**:
 3. `supabase/seed.sql` — ~20 **sample** laptop listings, kept as **benchmark/test
    data** (they're labelled «بيانات تجريبية» wherever they appear in a report). Real
    data comes from the ingest scripts below.
+4. `supabase/rate-limit.sql` — the `rate_limits` table + `check_rate_limit` RPC that
+   throttle the anonymous `/api/sessions` + `/answers` endpoints (financial-DoS guard)
+   and `/api/admin/login` (brute-force guard). The app **fails open** (no throttling)
+   until this is applied, so run it before going live.
 
 ### 5. Ingest real data (optional)
 Offline scripts — server-side only, never on the request path:

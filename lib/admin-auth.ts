@@ -1,4 +1,4 @@
-import { base64UrlDecode, base64UrlEncode, hmacSha256Hex, safeEqual } from "@/lib/crypto";
+import { base64UrlDecode, base64UrlEncode, hmacSha256Hex, safeEqual, sha256Hex } from "@/lib/crypto";
 
 // Admin authentication primitives. PURE: no next/headers import, so this module
 // is safe to use from both the Edge proxy and Node route handlers.
@@ -19,12 +19,14 @@ export function isAdminConfigured(): boolean {
   return Boolean(process.env.ADMIN_PASSWORD && process.env.ADMIN_SESSION_SECRET);
 }
 
-/** Constant-time check of a submitted password against ADMIN_PASSWORD. */
-export function verifyAdminPassword(input: unknown): boolean {
+/** Constant-time check of a submitted password against ADMIN_PASSWORD. Both sides
+ *  are hashed to a fixed-width digest first, so response timing never leaks the
+ *  password's length (a plain safeEqual short-circuits on unequal length). */
+export async function verifyAdminPassword(input: unknown): Promise<boolean> {
   const expected = process.env.ADMIN_PASSWORD;
   if (!expected || typeof input !== "string" || input.length === 0) return false;
-  // Compare with equal-length guard; safeEqual handles length mismatch.
-  return safeEqual(input, expected);
+  const [a, b] = await Promise.all([sha256Hex(input), sha256Hex(expected)]);
+  return safeEqual(a, b);
 }
 
 /** Create a signed admin cookie token valid for `ttlSeconds`. nowMs is injected

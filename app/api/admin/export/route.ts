@@ -87,6 +87,10 @@ export async function GET(req: Request) {
       },
     });
   } catch (err) {
-    return new Response(`export_error: ${(err as Error).message}`, { status: 500 });
+    console.error("admin export route error", err);
+    return new Response(JSON.stringify({ error: "server_error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    });
   }
 }

@@ -5,6 +5,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { NormalizedListing } from "@/lib/scrape/types";
+import { safeHttpUrl } from "@/lib/url";
 
 export async function replaceSourceListings(
   supabase: SupabaseClient,
@@ -22,7 +23,7 @@ export async function replaceSourceListings(
     price: l.price,
     currency: l.currency,
     availability: l.availability,
-    url: l.url,
+    url: safeHttpUrl(l.url),
     country: l.country,
     city_or_area: l.city_or_area,
     specs_json: l.specs,

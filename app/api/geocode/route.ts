@@ -74,7 +74,8 @@ export async function GET(req: Request) {
     }
 
     if (q && q.trim().length >= 2) {
-      const url = `${base}/${encodeURIComponent(q.trim())}.json?access_token=${token}&autocomplete=true&language=ar&types=place,locality,region,district,neighborhood&limit=5`;
+      const query = q.trim().slice(0, 200);
+      const url = `${base}/${encodeURIComponent(query)}.json?access_token=${token}&autocomplete=true&language=ar&types=place,locality,region,district,neighborhood&limit=5`;
       const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
       if (!res.ok) throw new Error(`mapbox ${res.status}`);
       const data = (await res.json()) as { features?: MapboxFeature[] };
@@ -83,9 +84,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ results: [] });
   } catch (err) {
-    return NextResponse.json(
-      { error: "geocode_failed", message: (err as Error).message, results: [] },
-      { status: 502 },
-    );
+    console.error("geocode route error", err);
+    return NextResponse.json({ error: "server_error", results: [] }, { status: 502 });
   }
 }

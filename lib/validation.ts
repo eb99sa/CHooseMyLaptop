@@ -64,7 +64,7 @@ export function normalizeBasicNeeds(input: unknown): BasicNeeds | null {
   return {
     budget_min,
     budget_max,
-    currency: typeof b.currency === "string" && b.currency ? b.currency : "KWD",
+    currency: typeof b.currency === "string" && b.currency ? b.currency.trim().slice(0, 8) : "KWD",
     country: typeof b.country === "string" ? b.country.slice(0, 80) : "",
     city_or_area: typeof b.city_or_area === "string" ? b.city_or_area.slice(0, 120) : "",
     location_source: pick(b.location_source, LOCATION_SOURCES, "skipped"),
@@ -74,7 +74,7 @@ export function normalizeBasicNeeds(input: unknown): BasicNeeds | null {
     screen_size_pref: pick(b.screen_size_pref, SCREEN, "no_pref"),
     needs_arabic_keyboard: Boolean(b.needs_arabic_keyboard),
     condition_pref: pick(b.condition_pref, CONDITION, "either"),
-    preferred_stores: typeof b.preferred_stores === "string" ? b.preferred_stores : undefined,
+    preferred_stores: typeof b.preferred_stores === "string" ? b.preferred_stores.slice(0, 200) : undefined,
     urgency: pick(b.urgency, URGENCY, "soon"),
   };
 }
@@ -96,6 +96,7 @@ export function normalizeAnswers(input: unknown): UserAnswer[] {
     let value: string;
     if (Array.isArray(a.answer_value)) value = JSON.stringify(a.answer_value);
     else value = a.answer_value == null ? "" : String(a.answer_value);
+    value = value.slice(0, 500);
     out.push({
       question_key: key,
       question_text: typeof a.question_text === "string" ? a.question_text : "",
