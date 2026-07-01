@@ -7,10 +7,11 @@ import type { Group } from "three";
 
 const SCENE_CYAN = "#35e0d8"; // --scene-cyan — the single neon accent
 
-// Aluminum tints — neutral gray only, NO brand hue. Silver body + a faintly
-// cooler/darker space-gray deck so the keyboard deck reads as a distinct part.
-const ALU_BODY = "#c9ccd1"; // lid + trackpad
-const ALU_DECK = "#b7bcc4"; // keyboard deck (slightly darker/cooler)
+// Aluminum tints — neutral gunmetal, NO brand hue. Darker space-gray body so
+// the metal contrasts against the light page (bright softbox streaks pop as
+// clearly-metal highlights); a still-darker deck reads as a distinct part.
+const ALU_BODY = "#70757d"; // lid + trackpad (gunmetal)
+const ALU_DECK = "#585d65"; // keyboard deck (darker gunmetal)
 
 // ---------------------------------------------------------------------------
 // Procedural brushed-aluminum maps, generated once on the client.
@@ -111,7 +112,7 @@ function useBrushedAluminum() {
     anisotropy: 1, // >0 enables the anisotropic BRDF
     anisotropyRotation: 0, // brush runs horizontal
     anisotropyMap: aniso,
-    envMapIntensity: 1.35, // still catches the white Lightformers
+    envMapIntensity: 1.55, // brighter softbox streaks against the darker gunmetal
     clearcoat: 0.25, // thin satin coat, not the old glassy 1.0
     clearcoatRoughness: 0.35,
   } as const;
