@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import { FitScore } from "@/components/ui/FitScore";
 import { PriceTag } from "@/components/ui/PriceTag";
 import { Icon } from "@/components/ui/Icon";
-import { SpecBar } from "@/components/report/SpecBar";
+import { SpecReveal } from "@/components/report/SpecReveal";
 import { Tip } from "@/components/ui/Tip";
 import { UI } from "@/lib/i18n";
 import { specMeters, shortLaptopName } from "@/lib/specView";
@@ -58,15 +58,11 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
             <PriceTag price={listing.price} currency={listing.currency} />
           </div>
         </div>
-        <FitScore value={final_score} size={72} />
+        <FitScore value={final_score} size={72} mode="ten" />
       </header>
 
-      {/* Each spec as what it MEANS + a strength bar (tech detail muted at the end). */}
-      <div className="grid grid-cols-1 gap-x-5 gap-y-3 min-[400px]:grid-cols-2">
-        {specMeters(s).map((m) => (
-          <SpecBar key={m.key} label={m.label} level={m.level} value={m.value} />
-        ))}
-      </div>
+      {/* Front shows only the /10 rating; the benefit bars fold behind a flip. */}
+      <SpecReveal meters={specMeters(s)} />
 
       {/* One short "why" line, then everything else folds into tap-chips (mobile-first). */}
       {reasons[0] && (
