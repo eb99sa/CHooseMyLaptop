@@ -18,6 +18,8 @@ export function FitScore({ value, label, size = 96, mode = "hundred" }: FitScore
   return (
     <div className="inline-flex shrink-0 flex-col items-center gap-2">
       <div
+        role="img"
+        aria-label={isTen ? `التقييم ${display} من 10` : `التقييم ${display} من 100`}
         className="relative grid place-items-center rounded-full"
         style={{
           width: size,
@@ -27,8 +29,8 @@ export function FitScore({ value, label, size = 96, mode = "hundred" }: FitScore
             `conic-gradient(var(--color-ink) ${v}%, var(--color-line) 0)`,
         }}
       >
-        <span className="pointer-events-none absolute inset-0 rounded-full shadow-[inset_0_0_0_1px_var(--color-line)]" />
-        <span className="pointer-events-none absolute inset-0 grid place-items-center">
+        <span className="pointer-events-none absolute inset-0 rounded-full shadow-[inset_0_0_0_1px_var(--color-line)]" aria-hidden />
+        <span className="pointer-events-none absolute inset-0 grid place-items-center" aria-hidden>
           <span
             className="font-bold leading-none tabular-nums text-[var(--color-ink)]"
             style={{ fontSize: Math.round(size * (isTen ? 0.3 : 0.26)) }}
@@ -46,7 +48,7 @@ export function FitScore({ value, label, size = 96, mode = "hundred" }: FitScore
           )}
         </span>
       </div>
-      <span className="font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-[var(--color-faint)]">
+      <span className="font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-[var(--color-faint)]" aria-hidden>
         {footer}
       </span>
     </div>

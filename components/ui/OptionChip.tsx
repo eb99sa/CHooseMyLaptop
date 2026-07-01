@@ -26,7 +26,8 @@ export function OptionChip({
     <button
       type="button"
       onClick={onClick}
-      aria-pressed={selected}
+      role={multi ? "checkbox" : "radio"}
+      aria-checked={selected}
       className={cn(
         "flex w-full items-center gap-3 rounded-[var(--radius-sm)] border px-4 py-3.5 text-start transition-all",
         selected

@@ -28,9 +28,16 @@ export function ScoreBar({ label, value, tone = "neutral", showValue = true }: S
           <span className="font-bold tabular-nums text-[var(--color-ink)]">{v}</span>
         )}
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-sunken)] ring-1 ring-[var(--color-line)]">
+      <div
+        className="h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-sunken)] ring-1 ring-[var(--color-line)]"
+        role="meter"
+        aria-valuenow={v}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={label}
+      >
         <div
-          className="h-full rounded-full transition-all"
+          className="h-full rounded-full transition-[width]"
           style={{ width: `${v}%`, background: FILL[tone] }}
         />
       </div>

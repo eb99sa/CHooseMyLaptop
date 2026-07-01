@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardMuted } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -30,6 +30,33 @@ export function FollowUpForm({ sessionId, questions }: FollowUpFormProps) {
   const [step, setStep] = useState(0);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Stable ids for the question heading and the submit-error alert. The heading
+  // id also labels the current question's option group / free-text input.
+  const baseId = useId();
+  const headingId = `${baseId}-q`;
+  const errorId = `${baseId}-err`;
+
+  // Focus target for the submit-error alert.
+  const errorRef = useRef<HTMLParagraphElement | null>(null);
+  // Skip the focus move on the very first render so we don't steal focus on
+  // page load; only move focus when the step actually changes (goNext/goBack).
+  const mountedRef = useRef(false);
+
+  // On step change, move focus to the new question heading so screen readers
+  // announce it and keyboard users land in the right place.
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+    document.getElementById(headingId)?.focus();
+  }, [step, headingId]);
+
+  // On a submit failure, move focus to the alert so it is announced.
+  useEffect(() => {
+    if (error) errorRef.current?.focus();
+  }, [error]);
 
   function setSingle(key: string, value: string) {
     setAnswers((prev) => ({ ...prev, [key]: value }));
@@ -133,15 +160,18 @@ export function FollowUpForm({ sessionId, questions }: FollowUpFormProps) {
         step={step + 1}
         total={questions.length}
         question={q.question_text}
+        headingId={headingId}
         hint={q.reason}
         onBack={goBack}
         onNext={goNext}
         nextLabel={isLast ? "إنشاء التوصية" : "التالي"}
         nextDisabled={required && !answered}
+        nextDescribedBy={error ? errorId : undefined}
       >
         <QuestionInput
           question={q}
           value={v}
+          labelledBy={headingId}
           onSingle={(val) => setSingle(q.question_key, val)}
           onToggle={(val) => toggleMulti(q.question_key, val)}
         />
@@ -149,8 +179,11 @@ export function FollowUpForm({ sessionId, questions }: FollowUpFormProps) {
 
       {error && (
         <p
+          id={errorId}
+          ref={errorRef}
+          tabIndex={-1}
           role="alert"
-          className="rounded-[var(--radius-card)] border border-[var(--color-danger)] bg-[var(--tint-danger)] px-4 py-3 text-sm font-semibold text-[var(--color-danger)]"
+          className="rounded-[var(--radius-card)] border border-[var(--color-danger)] bg-[var(--tint-danger)] px-4 py-3 text-sm font-semibold text-[var(--color-danger)] focus:outline-none"
         >
           {error}
         </p>
@@ -165,16 +198,18 @@ export function FollowUpForm({ sessionId, questions }: FollowUpFormProps) {
 interface QuestionInputProps {
   question: AIQuestion;
   value: string | string[] | undefined;
+  /** id of the question heading; labels the group / input. */
+  labelledBy: string;
   onSingle: (value: string) => void;
   onToggle: (value: string) => void;
 }
 
-function QuestionInput({ question, value, onSingle, onToggle }: QuestionInputProps) {
+function QuestionInput({ question, value, labelledBy, onSingle, onToggle }: QuestionInputProps) {
   const { question_type, question_key, options } = question;
 
   if (question_type === "boolean") {
     return (
-      <>
+      <div role="radiogroup" aria-labelledby={labelledBy} className="flex flex-col gap-3">
         {YES_NO.map((opt) => (
           <OptionChip
             key={opt.value}
@@ -183,13 +218,13 @@ function QuestionInput({ question, value, onSingle, onToggle }: QuestionInputPro
             onClick={() => onSingle(opt.value)}
           />
         ))}
-      </>
+      </div>
     );
   }
 
   if (question_type === "single_select") {
     return (
-      <>
+      <div role="radiogroup" aria-labelledby={labelledBy} className="flex flex-col gap-3">
         {(options ?? []).map((opt) => (
           <OptionChip
             key={opt.value}
@@ -198,14 +233,14 @@ function QuestionInput({ question, value, onSingle, onToggle }: QuestionInputPro
             onClick={() => onSingle(opt.value)}
           />
         ))}
-      </>
+      </div>
     );
   }
 
   if (question_type === "multi_select") {
     const selected = Array.isArray(value) ? value : [];
     return (
-      <>
+      <div role="group" aria-labelledby={labelledBy} className="flex flex-col gap-3">
         {(options ?? []).map((opt) => (
           <OptionChip
             key={opt.value}
@@ -215,7 +250,7 @@ function QuestionInput({ question, value, onSingle, onToggle }: QuestionInputPro
             onClick={() => onToggle(opt.value)}
           />
         ))}
-      </>
+      </div>
     );
   }
 
@@ -227,7 +262,7 @@ function QuestionInput({ question, value, onSingle, onToggle }: QuestionInputPro
         className="input"
         value={typeof value === "string" ? value : ""}
         onChange={(e) => onSingle(e.target.value)}
-        aria-label={question.question_text}
+        aria-labelledby={labelledBy}
         id={question_key}
       />
     );
@@ -239,7 +274,7 @@ function QuestionInput({ question, value, onSingle, onToggle }: QuestionInputPro
       className="input"
       value={typeof value === "string" ? value : ""}
       onChange={(e) => onSingle(e.target.value)}
-      aria-label={question.question_text}
+      aria-labelledby={labelledBy}
       id={question_key}
     />
   );

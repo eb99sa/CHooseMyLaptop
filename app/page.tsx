@@ -49,7 +49,7 @@ export default function HomePage() {
           className="pointer-events-none absolute inset-0 -z-0"
           style={{
             background:
-              "radial-gradient(78% 82% at 76% 45%, rgba(241,242,243,0.94), rgba(241,242,243,0.6) 52%, transparent 82%)",
+              "radial-gradient(78% 82% at 76% 45%, color-mix(in srgb, var(--color-canvas) 94%, transparent), color-mix(in srgb, var(--color-canvas) 60%, transparent) 52%, transparent 82%)",
           }}
         />
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4">

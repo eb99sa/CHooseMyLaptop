@@ -13,7 +13,9 @@ export function ExplainPanel({ title, items, tone = "default" }: ExplainPanelPro
     <div
       className={cn(
         "rounded-[var(--radius-lg)] border bg-[var(--color-surface)] p-5",
-        warn ? "border-[rgba(184,121,27,0.30)]" : "border-[var(--color-line)]",
+        warn
+          ? "border-[color-mix(in_srgb,var(--color-warning)_30%,var(--color-line))]"
+          : "border-[var(--color-line)]",
       )}
     >
       <div className="mb-3 flex items-center gap-2">

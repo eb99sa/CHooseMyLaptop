@@ -55,12 +55,20 @@ export function AdminLoginForm() {
           className="input"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? "admin-password-error" : undefined}
           required
         />
       </div>
 
       {error && (
-        <p className="text-sm font-medium text-[var(--color-danger)]">{error}</p>
+        <p
+          id="admin-password-error"
+          role="alert"
+          className="text-sm font-medium text-[var(--color-danger)]"
+        >
+          {error}
+        </p>
       )}
 
       <button

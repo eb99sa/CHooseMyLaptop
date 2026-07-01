@@ -40,17 +40,25 @@ interface FormErrors {
 }
 
 // A reusable group of option chips for enum choices (single-select).
+// The wrapper is a radiogroup labelled by the owning Field's label id so
+// assistive tech announces the question when focus enters the options.
 function ChoiceGroup<T extends string>({
   options,
   value,
   onChange,
+  labelId,
 }: {
   options: Array<{ value: T; label: string }>;
   value: T;
   onChange: (v: T) => void;
+  labelId: string;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+    <div
+      role="radiogroup"
+      aria-labelledby={labelId}
+      className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+    >
       {options.map((opt) => (
         <OptionChip
           key={opt.value}
@@ -217,9 +225,14 @@ export function BasicNeedsForm() {
         <Field
           label="ما هو استخدامك الأساسي للجهاز؟"
           hint="اختر الاستخدام الأقرب لك — يحدّد المواصفات المناسبة لميزانيتك."
+          labelId="use-case-label"
           required
         >
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div
+            role="radiogroup"
+            aria-labelledby="use-case-label"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+          >
             {USE_CASE_ORDER.map((uc) => (
               <OptionChip
                 key={uc}
@@ -296,53 +309,68 @@ export function BasicNeedsForm() {
 
       {/* Preferences */}
       <Card className="space-y-6 p-6">
-        <Field label="أهمية خفة الوزن وسهولة الحمل" hint="هل تحمل الجهاز معك كثيراً؟">
+        <Field
+          label="أهمية خفة الوزن وسهولة الحمل"
+          hint="هل تحمل الجهاز معك كثيراً؟"
+          labelId="portability-label"
+        >
           <ChoiceGroup<Importance>
             options={toOptions(IMPORTANCE_LABELS)}
             value={portability}
             onChange={setPortability}
+            labelId="portability-label"
           />
         </Field>
 
-        <Field label="أهمية عمر البطارية" hint="هل تستخدم الجهاز بعيداً عن الشاحن غالباً؟">
+        <Field
+          label="أهمية عمر البطارية"
+          hint="هل تستخدم الجهاز بعيداً عن الشاحن غالباً؟"
+          labelId="battery-label"
+        >
           <ChoiceGroup<Importance>
             options={toOptions(IMPORTANCE_LABELS)}
             value={batteryImportance}
             onChange={setBatteryImportance}
+            labelId="battery-label"
           />
         </Field>
 
-        <Field label="حجم الشاشة المفضّل">
+        <Field label="حجم الشاشة المفضّل" labelId="screen-size-label">
           <ChoiceGroup<ScreenSizePref>
             options={toOptions(SCREEN_SIZE_LABELS)}
             value={screenSizePref}
             onChange={setScreenSizePref}
+            labelId="screen-size-label"
           />
         </Field>
 
-        <Field label="حالة الجهاز">
+        <Field label="حالة الجهاز" labelId="condition-label">
           <ChoiceGroup<ConditionPref>
             options={toOptions(CONDITION_LABELS)}
             value={conditionPref}
             onChange={setConditionPref}
+            labelId="condition-label"
           />
         </Field>
 
-        <Field label="مدى الاستعجال">
+        <Field label="مدى الاستعجال" labelId="urgency-label">
           <ChoiceGroup<Urgency>
             options={toOptions(URGENCY_LABELS)}
             value={urgency}
             onChange={setUrgency}
+            labelId="urgency-label"
           />
         </Field>
 
-        <Field label="لوحة المفاتيح">
-          <OptionChip
-            multi
-            label="أحتاج لوحة مفاتيح عربية مطبوعة"
-            selected={needsArabicKeyboard}
-            onClick={() => setNeedsArabicKeyboard((b) => !b)}
-          />
+        <Field label="لوحة المفاتيح" labelId="keyboard-label">
+          <div role="group" aria-labelledby="keyboard-label">
+            <OptionChip
+              multi
+              label="أحتاج لوحة مفاتيح عربية مطبوعة"
+              selected={needsArabicKeyboard}
+              onClick={() => setNeedsArabicKeyboard((b) => !b)}
+            />
+          </div>
         </Field>
 
         <Field

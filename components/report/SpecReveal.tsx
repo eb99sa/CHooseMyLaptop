@@ -20,7 +20,7 @@ export function SpecReveal({ specs }: { specs: { label: string; value: string }[
         aria-pressed={open}
         aria-expanded={open}
         aria-controls={panelId}
-        className="btn btn-ghost w-full justify-center text-xs"
+        className="btn btn-ghost min-h-[44px] w-full justify-center text-xs"
       >
         <Icon name="refresh" size={14} />
         {open ? "إخفاء التفاصيل التقنية" : "التفاصيل التقنية"}

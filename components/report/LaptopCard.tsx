@@ -88,14 +88,16 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
             tone="success"
             trigger={
               <>
-                <Icon name="check" size={13} /> +{reasons.length - 1}
+                <span className="sr-only">أسباب إضافية</span>
+                <Icon name="check" size={13} />
+                <span aria-hidden>+{reasons.length - 1}</span>
               </>
             }
           >
             <ul className="space-y-1.5">
               {reasons.map((r, i) => (
                 <li key={i} className="flex gap-1.5">
-                  <span className="shrink-0 text-[var(--color-success)]">✓</span>
+                  <span className="shrink-0 text-[var(--color-success)]" aria-hidden>✓</span>
                   <span>{r}</span>
                 </li>
               ))}
@@ -114,7 +116,7 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
             <ul className="space-y-1.5">
               {warnings.map((w, i) => (
                 <li key={i} className="flex gap-1.5">
-                  <span className="shrink-0">⚠</span>
+                  <span className="shrink-0" aria-hidden>⚠</span>
                   <span>{w}</span>
                 </li>
               ))}
@@ -129,10 +131,16 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
               </p>
               {review.summary && <p>{review.summary}</p>}
               {review.pros.length > 0 && (
-                <p className="text-[var(--color-success)]">+ {review.pros.join("، ")}</p>
+                <p className="text-[var(--color-success)]">
+                  <span aria-hidden>+ </span>
+                  {review.pros.join("، ")}
+                </p>
               )}
               {review.cons.length > 0 && (
-                <p className="text-[var(--color-warning)]">− {review.cons.join("، ")}</p>
+                <p className="text-[var(--color-warning)]">
+                  <span aria-hidden>− </span>
+                  {review.cons.join("، ")}
+                </p>
               )}
               {review.source_url && (
                 <a
@@ -148,7 +156,9 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
           </Tip>
         )}
         {roi_score >= 70 && (
-          <span className="text-xs font-semibold text-[var(--color-muted)]">قيمة عالية ✓</span>
+          <span className="text-xs font-semibold text-[var(--color-muted)]">
+            قيمة عالية <span aria-hidden>✓</span>
+          </span>
         )}
       </div>
 

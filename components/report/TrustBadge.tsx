@@ -14,10 +14,13 @@ export function TrustBadge({ icon, label, verified = false }: TrustBadgeProps) {
       </span>
       <span className="text-xs font-semibold text-[var(--color-ink)]">{label}</span>
       {verified && (
-        <span
-          className="h-1.5 w-1.5 rounded-full bg-[var(--scene-green)] shadow-[var(--glow-soft)]"
-          aria-hidden
-        />
+        <>
+          <span className="sr-only">موثّق</span>
+          <span
+            className="h-1.5 w-1.5 rounded-full bg-[var(--scene-green)] shadow-[var(--glow-soft)]"
+            aria-hidden
+          />
+        </>
       )}
     </span>
   );
