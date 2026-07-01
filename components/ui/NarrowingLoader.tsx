@@ -51,7 +51,9 @@ export function NarrowingLoader({
     >
       <div className="flex items-baseline gap-2 font-mono text-sm text-[var(--color-muted)]">
         {showCount && (
-          <b className="text-2xl font-bold tabular-nums text-[var(--color-ink)]">{count}</b>
+          <b className="text-2xl font-bold tabular-nums text-[var(--color-ink)]" aria-hidden>
+            {count}
+          </b>
         )}
         <span>{label}</span>
       </div>

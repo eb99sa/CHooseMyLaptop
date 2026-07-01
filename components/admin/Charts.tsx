@@ -26,8 +26,13 @@ interface ChartsProps {
   locationSources: Datum[];
 }
 
-const BRAND = "#2bd693";
-const PALETTE = ["#2bd693", "#5eead4", "#46e2a0", "#f4c560", "#ff6f6f", "#7dd3fc", "#a3e635", "#c4b5fd"];
+// Grayscale ramp for multi-slice pies (recharts Cell fill wants a concrete
+// color). EMO is achromatic: distinct light grays read as slices on the charcoal
+// card. Single-series bars use the ink token directly (bone white on charcoal).
+const GRAYSCALE = ["#ffffff", "#c9c9c9", "#9d9d9d", "#e4e4e4", "#808080", "#b5b5b5"];
+const INK_FILL = "var(--color-ink)";
+// Hover cursor — bone at very low alpha (var() is unreliable inside the cursor rect).
+const CURSOR_FILL = "rgba(255,255,255,0.06)";
 
 const AXIS_STYLE = { fontSize: 12, fill: "var(--color-muted)" } as const;
 const tooltipStyle = {
@@ -38,12 +43,41 @@ const tooltipStyle = {
   color: "var(--color-ink)",
 } as const;
 
+// Visually-hidden data table so screen-reader users get the chart's Datum[].
+function SrDataTable({ caption, data }: { caption: string; data: Datum[] }) {
+  return (
+    <table className="sr-only">
+      <caption>{caption}</caption>
+      <thead>
+        <tr>
+          <th scope="col">البند</th>
+          <th scope="col">العدد</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((d, i) => (
+          <tr key={i}>
+            <th scope="row">{d.name}</th>
+            <td>
+              <span dir="ltr">{d.value}</span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 function ChartCard({
   title,
+  ariaLabel,
+  data,
   empty,
   children,
 }: {
   title: string;
+  ariaLabel: string;
+  data: Datum[];
   empty: boolean;
   children: ReactElement;
 }) {
@@ -55,9 +89,16 @@ function ChartCard({
           لا توجد بيانات كافية بعد
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={260}>
-          {children}
-        </ResponsiveContainer>
+        <>
+          {/* Sibling of role="img" (not a child): role="img" flattens its
+             subtree, so a nested table would be hidden from screen readers. */}
+          <SrDataTable caption={ariaLabel} data={data} />
+          <div role="img" aria-label={ariaLabel}>
+            <ResponsiveContainer width="100%" height={260}>
+              {children}
+            </ResponsiveContainer>
+          </div>
+        </>
       )}
     </div>
   );
@@ -72,16 +113,26 @@ function renderPieLabel(props: { name?: string | number; value?: string | number
 export function Charts({ useCases, budgets, models, statuses, locationSources }: ChartsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <ChartCard title="الاستخدامات الأكثر طلباً" empty={useCases.length === 0}>
+      <ChartCard
+        title="الاستخدامات الأكثر طلباً"
+        ariaLabel="رسم بياني: الاستخدامات الأكثر طلباً"
+        data={useCases}
+        empty={useCases.length === 0}
+      >
         <BarChart data={useCases} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
           <XAxis dataKey="name" tick={AXIS_STYLE} interval={0} angle={-15} textAnchor="end" height={56} />
           <YAxis allowDecimals={false} tick={AXIS_STYLE} width={32} />
-          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(53,230,162,0.08)" }} />
-          <Bar dataKey="value" fill={BRAND} radius={[6, 6, 0, 0]} />
+          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: CURSOR_FILL }} />
+          <Bar dataKey="value" fill={INK_FILL} radius={[6, 6, 0, 0]} />
         </BarChart>
       </ChartCard>
 
-      <ChartCard title="توزيع حالات الجلسات" empty={statuses.length === 0}>
+      <ChartCard
+        title="توزيع حالات الجلسات"
+        ariaLabel="رسم بياني: توزيع حالات الجلسات"
+        data={statuses}
+        empty={statuses.length === 0}
+      >
         <PieChart>
           <Tooltip contentStyle={tooltipStyle} />
           <Pie
@@ -97,22 +148,32 @@ export function Charts({ useCases, budgets, models, statuses, locationSources }:
             labelLine={false}
           >
             {statuses.map((_, i) => (
-              <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+              <Cell key={i} fill={GRAYSCALE[i % GRAYSCALE.length]} />
             ))}
           </Pie>
         </PieChart>
       </ChartCard>
 
-      <ChartCard title="توزيع الميزانيات" empty={budgets.length === 0}>
+      <ChartCard
+        title="توزيع الميزانيات"
+        ariaLabel="رسم بياني: توزيع الميزانيات"
+        data={budgets}
+        empty={budgets.length === 0}
+      >
         <BarChart data={budgets} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
           <XAxis dataKey="name" tick={AXIS_STYLE} interval={0} height={40} />
           <YAxis allowDecimals={false} tick={AXIS_STYLE} width={32} />
-          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(53,230,162,0.08)" }} />
-          <Bar dataKey="value" fill="#0ea5e9" radius={[6, 6, 0, 0]} />
+          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: CURSOR_FILL }} />
+          <Bar dataKey="value" fill={INK_FILL} radius={[6, 6, 0, 0]} />
         </BarChart>
       </ChartCard>
 
-      <ChartCard title="الأجهزة الأكثر ترشيحاً" empty={models.length === 0}>
+      <ChartCard
+        title="الأجهزة الأكثر ترشيحاً"
+        ariaLabel="رسم بياني: الأجهزة الأكثر ترشيحاً"
+        data={models}
+        empty={models.length === 0}
+      >
         <BarChart
           data={models}
           layout="vertical"
@@ -127,12 +188,17 @@ export function Charts({ useCases, budgets, models, statuses, locationSources }:
             interval={0}
             orientation="right"
           />
-          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(53,230,162,0.08)" }} />
-          <Bar dataKey="value" fill="#22c55e" radius={[0, 6, 6, 0]} />
+          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: CURSOR_FILL }} />
+          <Bar dataKey="value" fill={INK_FILL} radius={[0, 6, 6, 0]} />
         </BarChart>
       </ChartCard>
 
-      <ChartCard title="مصدر تحديد الموقع" empty={locationSources.length === 0}>
+      <ChartCard
+        title="مصدر تحديد الموقع"
+        ariaLabel="رسم بياني: مصدر تحديد الموقع"
+        data={locationSources}
+        empty={locationSources.length === 0}
+      >
         <PieChart>
           <Tooltip contentStyle={tooltipStyle} />
           <Pie
@@ -148,7 +214,7 @@ export function Charts({ useCases, budgets, models, statuses, locationSources }:
             labelLine={false}
           >
             {locationSources.map((_, i) => (
-              <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+              <Cell key={i} fill={GRAYSCALE[i % GRAYSCALE.length]} />
             ))}
           </Pie>
         </PieChart>

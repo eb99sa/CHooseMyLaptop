@@ -102,8 +102,12 @@ export default async function ReportPage({ params }: PageProps) {
             )}
           </header>
 
-          {/* 1) What you need — plain summary by default, flip to tech specs */}
-          <NeedsFlipCard spec={spec} />
+          {/* 1) What you need — plain summary by default, flip to tech specs.
+              An <h2> here keeps the heading order h1 → h2 → the cards' h3 titles. */}
+          <section className="space-y-4">
+            <h2 className="text-xl font-extrabold text-[var(--color-ink)]">وش تحتاج فعلاً</h2>
+            <NeedsFlipCard spec={spec} />
+          </section>
 
           {/* 3) Price range */}
           <Card className="space-y-4">
@@ -113,8 +117,8 @@ export default async function ReportPage({ params }: PageProps) {
               max={spec.price_range.fair_max}
               currency={spec.price_range.currency}
             />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[var(--radius-md)] border border-[var(--color-line)] p-3">
+            <div className="grid gap-4 border-t border-[var(--color-line)] pt-4 sm:grid-cols-2 sm:gap-0">
+              <div className="sm:pe-5">
                 <p className="text-xs text-[var(--color-muted)]">
                   أقل من هذا السعر مريب (قد يكون قديماً أو غير أصلي)
                 </p>
@@ -126,7 +130,7 @@ export default async function ReportPage({ params }: PageProps) {
                   />
                 </p>
               </div>
-              <div className="rounded-[var(--radius-md)] border border-[var(--color-line)] p-3">
+              <div className="border-t border-[var(--color-line)] pt-4 sm:border-t-0 sm:border-s sm:ps-5 sm:pt-0">
                 <p className="text-xs text-[var(--color-muted)]">
                   أعلى من هذا السعر مبالغ فيه لاحتياجك
                 </p>
@@ -146,6 +150,7 @@ export default async function ReportPage({ params }: PageProps) {
           {scored.length === 0 && (
             <Card>
               <StateView
+                as="h2"
                 icon="inbox"
                 title="ما لقينا جهاز يطابق تمامًا"
                 body="ما توفّر لنا جهاز يطابق مواصفاتك وميزانيتك في الكتالوج الحالي. جرّب ترفع الميزانية شوي أو تغيّر الأولوية وبنلقّى لك خيار أوضح."
@@ -162,7 +167,7 @@ export default async function ReportPage({ params }: PageProps) {
           {winner && (
             <section className="space-y-4">
               <h2 className="text-xl font-extrabold text-[var(--color-ink)]">الخيار الأفضل لك</h2>
-              <div style={{ maxWidth: "34rem" }}>
+              <div className="max-w-[34rem]">
                 <LaptopCard
                   scored={winner}
                   review={reviews.get(winner.listing.id)}
@@ -192,17 +197,16 @@ export default async function ReportPage({ params }: PageProps) {
             </section>
           )}
 
-          {/* Avoid — a caution, not a competing choice */}
+          {/* Avoid — a caution, not a competing choice. A tinted banner (not a card)
+              so the inner LaptopCard stays the only card here. */}
           {report.avoid && (
-            <div
-              className="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--tint-danger)] p-4"
-              style={{ maxWidth: "34rem" }}
-            >
-              <div className="mb-3 flex items-center gap-2">
+            <section className="max-w-[34rem] space-y-3 rounded-[var(--radius-md)] bg-[var(--tint-danger)] p-4">
+              <div className="flex items-center gap-2 border-b border-[color-mix(in_srgb,var(--color-danger)_20%,var(--color-line))] pb-3">
                 <Badge tone="danger">{RECOMMENDATION_TYPE_LABELS.avoid}</Badge>
+                <h2 className="text-base font-bold text-[var(--color-ink)]">جهاز ننصحك تتجنّبه</h2>
               </div>
               <LaptopCard scored={report.avoid} review={reviews.get(report.avoid.listing.id)} />
-            </div>
+            </section>
           )}
 
           {/* 6) Closing narrative */}
@@ -215,12 +219,16 @@ export default async function ReportPage({ params }: PageProps) {
             </Card>
           )}
 
-          {/* Actions */}
+          {/* Actions — when there's no match the empty state already owns the one
+              primary CTA, so demote the footer «new session» link to ghost. */}
           <div className="flex flex-wrap gap-3 pt-2">
             <Link href={`/sessions/${id}/compare`} className="btn btn-ghost">
               {UI.compare}
             </Link>
-            <Link href="/sessions/new" className="btn btn-primary">
+            <Link
+              href="/sessions/new"
+              className={scored.length === 0 ? "btn btn-ghost" : "btn btn-primary"}
+            >
               {UI.newSession}
             </Link>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { UI } from "@/lib/i18n";
@@ -47,7 +47,11 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
   const [autocompleteDisabled, setAutocompleteDisabled] = useState(false);
 
   // Error / info message shown under the buttons (geolocation failures etc.).
+  // Messages are geolocation failures/notices, so they read as alerts.
   const [message, setMessage] = useState<string | null>(null);
+
+  // id for the autocomplete listbox so the input (combobox) can own it.
+  const listboxId = useId();
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -238,9 +242,9 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
   // "locating" view: waiting for geolocation.
   if (mode === "locating") {
     return (
-      <Card className="space-y-3">
+      <Card className="space-y-3" aria-busy="true">
         <p className="text-sm font-bold text-[var(--color-ink)]">{UI.locationTitle}</p>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3" role="status" aria-live="polite">
           <span
             className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-line)] border-t-[var(--color-brand-600)]"
             aria-hidden
@@ -253,12 +257,20 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
 
   // "search" view: manual area search (autocomplete or plain text).
   if (mode === "search") {
+    const showListbox = (results.length > 0 || searching) && query.trim().length >= 2;
     return (
       <Card className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm font-bold text-[var(--color-ink)]">{UI.locationTitle}</p>
         </div>
-        {message && <p className="text-xs text-[var(--color-muted)] leading-relaxed">{message}</p>}
+        {message && (
+          <p
+            role="alert"
+            className="text-xs text-[var(--color-muted)] leading-relaxed"
+          >
+            {message}
+          </p>
+        )}
 
         {autocompleteDisabled ? (
           <div className="flex flex-wrap items-end gap-2">
@@ -276,7 +288,7 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
                 }
               }}
             />
-            <Button type="button" variant="primary" onClick={confirmPlainText}>
+            <Button type="button" variant="ghost" onClick={confirmPlainText}>
               {UI.changeLocation}
             </Button>
           </div>
@@ -287,24 +299,34 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
               className="input"
               placeholder={UI.searchCityArea}
               aria-label={UI.searchCityArea}
+              role="combobox"
+              aria-expanded={showListbox}
+              aria-controls={listboxId}
+              aria-autocomplete="list"
               value={query}
               onChange={(e) => onQueryChange(e.target.value)}
               autoComplete="off"
             />
-            {(results.length > 0 || searching) && query.trim().length >= 2 && (
+            {/* Announce the result count for screen-reader users. */}
+            <span className="sr-only" role="status" aria-live="polite">
+              {showListbox && !searching && results.length > 0
+                ? `${results.length} نتيجة`
+                : ""}
+            </span>
+            {showListbox && (
               <ul
-                className="absolute z-20 mt-1 w-full overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] shadow-lg"
+                id={listboxId}
+                className="absolute z-20 mt-1 w-full overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line-strong)] bg-[var(--color-surface)]"
                 role="listbox"
+                aria-label={UI.searchCityArea}
               >
                 {searching && results.length === 0 ? (
                   <li className="px-3 py-2 text-sm text-[var(--color-muted)]">{UI.locating}</li>
                 ) : (
                   results.map((r) => (
-                    <li key={r.id}>
+                    <li key={r.id} role="option" aria-selected={false}>
                       <button
                         type="button"
-                        role="option"
-                        aria-selected={false}
                         onClick={() => selectResult(r)}
                         className="block w-full px-3 py-2 text-start text-sm text-[var(--color-ink)] hover:bg-[var(--color-brand-50)]"
                       >
@@ -334,9 +356,13 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
         <p className="text-sm font-bold text-[var(--color-ink)]">{UI.locationTitle}</p>
         <p className="text-xs text-[var(--color-muted)] leading-relaxed">{UI.locationHelp}</p>
       </div>
-      {message && <p className="text-xs text-[var(--color-muted)] leading-relaxed">{message}</p>}
+      {message && (
+        <p role="alert" className="text-xs text-[var(--color-muted)] leading-relaxed">
+          {message}
+        </p>
+      )}
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="primary" onClick={handleUseMyLocation}>
+        <Button type="button" variant="ghost" onClick={handleUseMyLocation}>
           {UI.useMyLocation}
         </Button>
         <Button

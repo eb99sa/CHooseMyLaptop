@@ -81,9 +81,10 @@ export default async function ComparePage({ params }: PageProps) {
 
           <div className="card overflow-x-auto p-0">
             <table className="w-full min-w-[640px] border-separate border-spacing-0 text-sm">
+              <caption className="sr-only">مقارنة بين أفضل الأجهزة المرشحة</caption>
               <thead>
                 <tr>
-                  <th className={cn(firstCol, "border-b border-[var(--color-line)] text-xs font-semibold text-[var(--color-muted)]")}>
+                  <th scope="col" className={cn(firstCol, "border-b border-[var(--color-line)] text-xs font-semibold text-[var(--color-muted)]")}>
                     المواصفة
                   </th>
                   {laptops.map((s) => {
@@ -91,11 +92,11 @@ export default async function ComparePage({ params }: PageProps) {
                     return (
                       <th
                         key={s.listing.id}
+                        scope="col"
                         style={{ unicodeBidi: "plaintext" }}
                         className={cn(
                           "border-b border-[var(--color-line)] p-4 text-start align-top",
-                          isBest &&
-                            "bg-[var(--color-canvas-veil)] shadow-[inset_0_2px_0_var(--scene-cyan)]",
+                          isBest && "bg-[var(--color-canvas-veil)]",
                         )}
                       >
                         <div className="space-y-1.5">
@@ -117,7 +118,7 @@ export default async function ComparePage({ params }: PageProps) {
               <tbody>
                 {ROWS.map((row) => (
                   <tr key={row.label}>
-                    <th className={cn(firstCol, "border-b border-[var(--color-line)] font-semibold text-[var(--color-muted)]")}>
+                    <th scope="row" className={cn(firstCol, "border-b border-[var(--color-line)] font-semibold text-[var(--color-muted)]")}>
                       {row.label}
                     </th>
                     {laptops.map((s) => {

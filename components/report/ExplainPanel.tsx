@@ -12,8 +12,10 @@ export function ExplainPanel({ title, items, tone = "default" }: ExplainPanelPro
   return (
     <div
       className={cn(
-        "rounded-[var(--radius-lg)] border bg-[var(--color-surface)] p-5",
-        warn ? "border-[rgba(184,121,27,0.30)]" : "border-[var(--color-line)]",
+        // Borderless recessed/tinted fill so it doesn't add a competing card
+        // edge when nested inside the report's outer Card (EMO).
+        "rounded-[var(--radius-md)] p-5",
+        warn ? "bg-[var(--tint-warning)]" : "bg-[var(--color-surface-sunken)]",
       )}
     >
       <div className="mb-3 flex items-center gap-2">

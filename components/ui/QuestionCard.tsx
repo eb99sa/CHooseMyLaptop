@@ -8,6 +8,9 @@ interface QuestionCardProps {
   total?: number;
   eyebrow?: string;
   question: string;
+  /** id placed on the question <h2> so groups/inputs can reference it via
+   * aria-labelledby and callers can move focus to it on step change. */
+  headingId?: string;
   hint?: string;
   children: ReactNode; // the options / input
   onBack?: () => void;
@@ -15,6 +18,8 @@ interface QuestionCardProps {
   nextLabel?: string;
   backLabel?: string;
   nextDisabled?: boolean;
+  /** id of an error/description element the Next button should reference. */
+  nextDescribedBy?: string;
 }
 
 // The advisor panel — a machined "window" holding one question, its options,
@@ -25,6 +30,7 @@ export function QuestionCard({
   total,
   eyebrow = "ADVISOR",
   question,
+  headingId,
   hint,
   children,
   onBack,
@@ -32,9 +38,10 @@ export function QuestionCard({
   nextLabel = "التالي",
   backLabel = "السابق",
   nextDisabled = false,
+  nextDescribedBy,
 }: QuestionCardProps) {
   return (
-    <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line)] bg-[var(--color-surface)] shadow-[var(--shadow-lift)]">
+    <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line-strong)] bg-[var(--color-surface)]">
       <div
         className="flex h-[38px] items-center gap-2 border-b border-[var(--color-line)] px-4"
         style={{ background: "linear-gradient(180deg, var(--color-surface), var(--color-surface-2))" }}
@@ -62,8 +69,10 @@ export function QuestionCard({
           </div>
         )}
         <h2
+          id={headingId}
+          tabIndex={-1}
           className={cn(
-            "text-2xl font-bold leading-snug text-[var(--color-ink)] [text-wrap:balance]",
+            "text-2xl font-bold leading-snug text-[var(--color-ink)] [text-wrap:balance] focus:outline-none",
             hint ? "mb-2" : "mb-6",
           )}
         >
@@ -89,6 +98,7 @@ export function QuestionCard({
                 variant="primary"
                 onClick={onNext}
                 disabled={nextDisabled}
+                aria-describedby={nextDescribedBy}
                 iconEnd={<Icon name="arrow-left" size={16} />}
               >
                 {nextLabel}

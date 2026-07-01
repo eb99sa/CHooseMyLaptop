@@ -123,16 +123,16 @@ export default async function AdminListingsPage() {
                 <table className="w-full min-w-[920px] border-collapse text-start text-sm">
                   <thead>
                     <tr className="border-b border-[var(--color-line)] text-[var(--color-muted)]">
-                      <th className="px-4 py-3 text-start font-semibold">الجهاز</th>
-                      <th className="px-4 py-3 text-start font-semibold">العلامة</th>
-                      <th className="px-4 py-3 text-start font-semibold">المتجر</th>
-                      <th className="px-4 py-3 text-start font-semibold">السعر</th>
-                      <th className="px-4 py-3 text-start font-semibold">التوفر</th>
-                      <th className="px-4 py-3 text-start font-semibold">الدولة</th>
-                      <th className="px-4 py-3 text-start font-semibold">المنطقة</th>
-                      <th className="px-4 py-3 text-start font-semibold">التقييم</th>
-                      <th className="px-4 py-3 text-start font-semibold">المصدر</th>
-                      <th className="px-4 py-3 text-start font-semibold">آخر تحقّق</th>
+                      <th scope="col" className="px-4 py-3 text-start font-semibold">الجهاز</th>
+                      <th scope="col" className="px-4 py-3 text-start font-semibold">العلامة</th>
+                      <th scope="col" className="px-4 py-3 text-start font-semibold">المتجر</th>
+                      <th scope="col" className="px-4 py-3 text-start font-semibold">السعر</th>
+                      <th scope="col" className="px-4 py-3 text-start font-semibold">التوفر</th>
+                      <th scope="col" className="px-4 py-3 text-start font-semibold">الدولة</th>
+                      <th scope="col" className="px-4 py-3 text-start font-semibold">المنطقة</th>
+                      <th scope="col" className="px-4 py-3 text-start font-semibold">التقييم</th>
+                      <th scope="col" className="px-4 py-3 text-start font-semibold">المصدر</th>
+                      <th scope="col" className="px-4 py-3 text-start font-semibold">آخر تحقّق</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -152,9 +152,13 @@ export default async function AdminListingsPage() {
                             {r.store_name || "—"}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-[var(--color-ink)]">
-                            {r.price != null
-                              ? formatPrice(Number(r.price), r.currency ?? "KWD")
-                              : "—"}
+                            {r.price != null ? (
+                              <span dir="ltr">
+                                {formatPrice(Number(r.price), r.currency ?? "KWD")}
+                              </span>
+                            ) : (
+                              "—"
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             <Badge tone={AVAILABILITY_TONE[avail] ?? "neutral"}>
@@ -168,7 +172,11 @@ export default async function AdminListingsPage() {
                             {r.city_or_area || "—"}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-[var(--color-muted)]">
-                            {rating != null ? `${rating.toFixed(1)} / 5` : "—"}
+                            {rating != null ? (
+                              <span dir="ltr">{`${rating.toFixed(1)} / 5`}</span>
+                            ) : (
+                              "—"
+                            )}
                           </td>
                           <td className="px-4 py-3 text-[var(--color-muted)]">
                             {SOURCE_LABELS[r.source_type ?? ""] ?? r.source_type ?? "—"}

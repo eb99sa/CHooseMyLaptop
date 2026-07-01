@@ -1,7 +1,7 @@
 import Link from "next/link";
+import nextDynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/ui/SiteHeader";
-import { Charts } from "@/components/admin/Charts";
 import { ExportButtons } from "@/components/admin/ExportButtons";
 import { StatCard } from "@/components/admin/StatCard";
 import { AdminSignOut } from "@/components/admin/AdminSignOut";
@@ -13,6 +13,17 @@ import type { FinalReport, LocationSource, UseCase } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// Code-split the Recharts bundle (client component); render a lightweight
+// placeholder while it loads so the analytics section doesn't block the page.
+const Charts = nextDynamic(() => import("@/components/admin/Charts").then((m) => m.Charts), {
+  ssr: false,
+  loading: () => (
+    <div className="card flex h-[260px] items-center justify-center p-5 text-sm text-[var(--color-muted)]">
+      نحمّل الإحصائيات…
+    </div>
+  ),
+});
 
 interface Datum {
   name: string;
@@ -223,7 +234,7 @@ export default async function AdminDashboardPage() {
           </div>
         ) : (
           <>
-            <section className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard label="إجمالي الجلسات" value={agg.total} tone="brand" />
               <StatCard label="جلسات مكتملة" value={agg.completed} tone="success" />
               <StatCard label="جلسات فاشلة" value={agg.failed} tone="danger" />
@@ -231,6 +242,7 @@ export default async function AdminDashboardPage() {
             </section>
 
             <section className="mb-8">
+              <h2 className="mb-3 text-lg font-bold text-[var(--color-ink)]">الإحصائيات</h2>
               <Charts
                 useCases={agg.useCases}
                 budgets={agg.budgets}

@@ -25,7 +25,7 @@ export function NeedsFlipCard({ spec }: { spec: SpecRecommendation }) {
           type="button"
           onClick={() => setTech((t) => !t)}
           aria-pressed={tech}
-          className="btn btn-ghost shrink-0 text-xs"
+          className="btn btn-ghost min-h-[44px] shrink-0 text-xs"
         >
           <Icon name="refresh" size={14} />
           {tech ? "الملخّص" : "المواصفات التقنية"}

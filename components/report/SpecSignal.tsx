@@ -34,6 +34,7 @@ export function SpecSignal({ icon, code, value, lit = false }: SpecSignalProps) 
           {value}
         </span>
       </div>
+      {lit && <span className="sr-only">مهم لاختيارك</span>}
       <span
         className={cn(
           "ms-auto h-1.5 w-1.5 shrink-0 rounded-full",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface TipProps {
@@ -24,6 +24,7 @@ const TONE: Record<NonNullable<TipProps["tone"]>, string> = {
 export function Tip({ trigger, children, tone = "neutral", className }: TipProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
+  const tipId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -51,9 +52,13 @@ export function Tip({ trigger, children, tone = "neutral", className }: TipProps
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
         aria-expanded={open}
+        aria-controls={tipId}
+        aria-describedby={open ? tipId : undefined}
         className={cn(
-          "inline-flex items-center gap-1 rounded-full border bg-[var(--color-surface)] px-2.5 py-1 text-xs font-semibold transition-colors hover:border-[var(--color-line-strong)]",
+          "inline-flex min-h-[44px] items-center gap-1 rounded-full border bg-[var(--color-surface)] px-2.5 py-2.5 text-xs font-semibold transition-colors hover:border-[var(--color-line-strong)]",
           TONE[tone],
         )}
       >
@@ -61,6 +66,7 @@ export function Tip({ trigger, children, tone = "neutral", className }: TipProps
       </button>
       {open && (
         <span
+          id={tipId}
           role="tooltip"
           className="absolute bottom-full start-0 z-20 mb-2 w-60 max-w-[80vw] rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-surface)] p-3 text-start text-xs leading-relaxed text-[var(--color-ink)] shadow-[var(--shadow-lift)]"
         >

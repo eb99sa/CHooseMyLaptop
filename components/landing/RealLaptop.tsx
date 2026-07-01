@@ -15,7 +15,7 @@ import type { Group, Mesh } from "three";
 const MODEL = "/models/mac-draco.glb";
 const HINGE_CLOSED = 1.575;
 const HINGE_OPEN = -0.425;
-const SCENE_CYAN = "#35e0d8"; // --scene-cyan — the one neon accent (screen only)
+const SCENE_EMBER = "#f45500"; // --scene accent — the ember filament (screen only)
 
 interface RealLaptopProps {
   openness?: number; // 0 = closed, 1 = fully open
@@ -65,7 +65,7 @@ export function RealLaptop({ openness = 1, parallax = 0.45 }: RealLaptopProps) {
           <mesh geometry={mesh("Cube008_2")}>
             <meshStandardMaterial
               color="#0b1416"
-              emissive={SCENE_CYAN}
+              emissive={SCENE_EMBER}
               emissiveIntensity={1.15}
               metalness={0}
               roughness={0.35}
