@@ -69,10 +69,14 @@ export default function BackgroundLaptop() {
             <Lightformer form="rect" intensity={6} color="#ffffff" position={[0, 2, 4]} rotation={[0, 0, Math.PI / 4]} scale={[1.5, 8, 1]} />
           </Environment>
 
-          {/* Composed shot: shifted toward the inline-start, lower third, so page
-              copy/cards stay clear. rotation[0,π,0] faces the screen at the camera. */}
-          <group position={[-7, -2.2, 0]} rotation={[0, Math.PI, 0]} scale={0.72}>
-            <Float speed={1} rotationIntensity={0.16} floatIntensity={0.5} floatingRange={[-0.1, 0.1]}>
+          {/* Bigger cyan point light so the emissive screen spills onto the deck. */}
+          <pointLight position={[6, 1.5, -3]} intensity={5} distance={16} color="#35e0d8" />
+
+          {/* Composed shot: pushed to the LEFT (opposite the RTL copy on the right),
+              larger, lower third. rotation[0,π,0] faces the screen at the camera;
+              RealLaptop tilts toward the cursor on top of the gentle Float. */}
+          <group position={[6, -2, 0]} rotation={[0, Math.PI, 0]} scale={0.95}>
+            <Float speed={1} rotationIntensity={0.12} floatIntensity={0.5} floatingRange={[-0.1, 0.1]}>
               <RealLaptop openness={opennessFor(pathname)} />
             </Float>
           </group>
