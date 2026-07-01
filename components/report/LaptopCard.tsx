@@ -58,6 +58,15 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
           <div className="pt-1">
             <PriceTag price={listing.price} currency={listing.currency} />
           </div>
+          {listing.store_name && (
+            <p className="flex items-center gap-1.5 text-xs text-[var(--color-muted)]">
+              <span className="text-[var(--color-faint)]" aria-hidden>
+                <Icon name="store" size={13} />
+              </span>
+              <span className="sr-only">المتجر: </span>
+              <span dir="auto">{listing.store_name}</span>
+            </p>
+          )}
         </div>
         <FitScore value={final_score} size={72} label="التقييم" />
       </header>
@@ -170,7 +179,7 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
           className="btn btn-ghost mt-auto text-sm"
         >
           <Icon name="store" size={16} />
-          الذهاب للمتجر
+          {listing.store_name ? `الذهاب إلى ${listing.store_name}` : "الذهاب للمتجر"}
         </a>
       )}
     </article>
