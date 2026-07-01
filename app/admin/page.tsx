@@ -1,5 +1,4 @@
 import Link from "next/link";
-import nextDynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { ExportButtons } from "@/components/admin/ExportButtons";
@@ -9,21 +8,11 @@ import { createServiceClient, isDbConfigured } from "@/lib/supabase/service";
 import { isAdminRequest } from "@/lib/admin-cookies";
 import { USE_CASE_LABELS, UI } from "@/lib/i18n";
 import { formatDate, safeJsonParse } from "@/lib/utils";
+import { ChartsPanel } from "@/components/admin/ChartsPanel";
 import type { FinalReport, LocationSource, UseCase } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-// Code-split the Recharts bundle (client component); render a lightweight
-// placeholder while it loads so the analytics section doesn't block the page.
-const Charts = nextDynamic(() => import("@/components/admin/Charts").then((m) => m.Charts), {
-  ssr: false,
-  loading: () => (
-    <div className="card flex h-[260px] items-center justify-center p-5 text-sm text-[var(--color-muted)]">
-      نحمّل الإحصائيات…
-    </div>
-  ),
-});
 
 interface Datum {
   name: string;
@@ -243,7 +232,7 @@ export default async function AdminDashboardPage() {
 
             <section className="mb-8">
               <h2 className="mb-3 text-lg font-bold text-[var(--color-ink)]">الإحصائيات</h2>
-              <Charts
+              <ChartsPanel
                 useCases={agg.useCases}
                 budgets={agg.budgets}
                 models={agg.models}

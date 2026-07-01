@@ -18,7 +18,7 @@ interface Datum {
   value: number;
 }
 
-interface ChartsProps {
+export interface ChartsProps {
   useCases: Datum[];
   budgets: Datum[];
   models: Datum[];
