@@ -8,7 +8,7 @@ import { SpecBar } from "@/components/report/SpecBar";
 import { SpecReveal } from "@/components/report/SpecReveal";
 import { Tip } from "@/components/ui/Tip";
 import { UI } from "@/lib/i18n";
-import { specMeters, shortLaptopName, tierWord, techSpecs } from "@/lib/specView";
+import { specMeters, shortLaptopName, scoreTen, techSpecs } from "@/lib/specView";
 import { cn } from "@/lib/utils";
 
 interface LaptopCardProps {
@@ -59,13 +59,13 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
             <PriceTag price={listing.price} currency={listing.currency} />
           </div>
         </div>
-        <FitScore value={final_score} size={72} mode="ten" />
+        <FitScore value={final_score} size={72} label="التقييم" />
       </header>
 
-      {/* Front: a plain rating for every aspect — no component names, no jargon. */}
+      {/* Front: a numeric /10 rating for every aspect — no component names, no jargon. */}
       <div className="grid grid-cols-1 gap-x-5 gap-y-3 min-[400px]:grid-cols-2">
         {specMeters(s).map((m) => (
-          <SpecBar key={m.key} label={m.label} level={m.level} note={tierWord(m.level)} />
+          <SpecBar key={m.key} label={m.label} level={m.level} note={scoreTen(m.level)} />
         ))}
       </div>
 

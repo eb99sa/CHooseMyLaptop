@@ -37,6 +37,12 @@ export function tierWord(level: number): string {
   return "محدود";
 }
 
+/** A compact numeric rating out of 10 for a 0..100 level (e.g. 85 → "8.5", 90 → "9"). */
+export function scoreTen(level: number): string {
+  const n = Math.round(level / 10 * 10) / 10; // one decimal
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
 /**
  * The TECHNICAL details — component names, GB, GPU model, integrated-vs-dedicated.
  * These live behind the flip (for tech-savvy users); the front never shows them.

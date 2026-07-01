@@ -50,23 +50,31 @@ export default async function ReportPage({ params }: PageProps) {
   const isEstimated = report.source === "fallback" || seedPick;
   const locationSkipped = session.location_source === "skipped";
 
-  // Curated picks, de-duplicated by listing id so the same laptop is never
-  // shown as two separate "final recommendation" cards (small catalogs).
-  const seenPickIds = new Set<string>();
-  const picks = [
-    { key: "best_overall", scored: report.best_overall },
-    { key: "best_value", scored: report.best_value },
-    { key: "best_budget", scored: report.best_budget },
-  ].filter((p) => {
-    if (!p.scored || seenPickIds.has(p.scored.listing.id)) return false;
-    seenPickIds.add(p.scored.listing.id);
-    return true;
-  });
+  // ONE highlighted winner (best overall). The other picks (best value / best budget)
+  // are not shown as separate cards — they live inside the recommendations list below,
+  // tagged inline. Avoid stays a caution.
+  const winner = report.best_overall ?? null;
+  const winnerId = winner?.listing.id;
+
+  // Inline badges for the recommendations list (skip the winner so it isn't double-tagged).
+  const badgeById = new Map<string, string>();
+  for (const [key, pick] of [
+    ["best_value", report.best_value],
+    ["best_budget", report.best_budget],
+  ] as const) {
+    const id = pick?.listing.id;
+    if (id && id !== winnerId && !badgeById.has(id)) {
+      badgeById.set(id, RECOMMENDATION_TYPE_LABELS[key]);
+    }
+  }
+
+  // Recommendations = everything ranked, minus the winner (shown once, on top).
+  const others = scored.filter((s) => s.listing.id !== winnerId);
 
   // Third-party (rtings) reviews for every listing shown, attached by listing id.
   const listingIds = [
     ...scored.map((s) => s.listing.id),
-    ...picks.map((p) => p.scored!.listing.id),
+    winnerId,
     report.avoid?.listing.id,
   ].filter((x): x is string => Boolean(x));
   const reviews: Map<string, ListingReview> = isDbConfigured()
@@ -150,50 +158,51 @@ export default async function ReportPage({ params }: PageProps) {
             </Card>
           )}
 
-          {/* 4) Final recommendation — curated picks */}
-          {(picks.length > 0 || report.avoid) && (
+          {/* 4) The one winner — the single best choice, highlighted */}
+          {winner && (
             <section className="space-y-4">
-              <h2 className="text-xl font-extrabold text-[var(--color-ink)]">
-                {UI.finalRecommendation}
-              </h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {picks.map((p) => (
-                  <LaptopCard
-                    key={p.key}
-                    scored={p.scored!}
-                    review={reviews.get(p.scored!.listing.id)}
-                    highlight
-                    badgeLabel={
-                      RECOMMENDATION_TYPE_LABELS[
-                        p.key as keyof typeof RECOMMENDATION_TYPE_LABELS
-                      ]
-                    }
-                  />
-                ))}
+              <h2 className="text-xl font-extrabold text-[var(--color-ink)]">الخيار الأفضل لك</h2>
+              <div style={{ maxWidth: "34rem" }}>
+                <LaptopCard
+                  scored={winner}
+                  review={reviews.get(winner.listing.id)}
+                  highlight
+                  badgeLabel={RECOMMENDATION_TYPE_LABELS.best_overall}
+                />
               </div>
-              {report.avoid && (
-                <div className="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--tint-danger)] p-4">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Badge tone="danger">{RECOMMENDATION_TYPE_LABELS.avoid}</Badge>
-                  </div>
-                  <LaptopCard scored={report.avoid} review={reviews.get(report.avoid.listing.id)} />
-                </div>
-              )}
             </section>
           )}
 
-          {/* 5) All ranked options */}
-          {scored.length > 0 && (
+          {/* 5) The rest of the recommendations (best value / budget tagged inline) */}
+          {others.length > 0 && (
             <section className="space-y-4">
               <h2 className="text-xl font-extrabold text-[var(--color-ink)]">
-                {UI.options}
+                {winner ? "خيارات أخرى" : UI.options}
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {scored.map((s) => (
-                  <LaptopCard key={s.listing.id} scored={s} review={reviews.get(s.listing.id)} />
+                {others.map((s) => (
+                  <LaptopCard
+                    key={s.listing.id}
+                    scored={s}
+                    review={reviews.get(s.listing.id)}
+                    badgeLabel={badgeById.get(s.listing.id)}
+                  />
                 ))}
               </div>
             </section>
+          )}
+
+          {/* Avoid — a caution, not a competing choice */}
+          {report.avoid && (
+            <div
+              className="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--tint-danger)] p-4"
+              style={{ maxWidth: "34rem" }}
+            >
+              <div className="mb-3 flex items-center gap-2">
+                <Badge tone="danger">{RECOMMENDATION_TYPE_LABELS.avoid}</Badge>
+              </div>
+              <LaptopCard scored={report.avoid} review={reviews.get(report.avoid.listing.id)} />
+            </div>
           )}
 
           {/* 6) Closing narrative */}
