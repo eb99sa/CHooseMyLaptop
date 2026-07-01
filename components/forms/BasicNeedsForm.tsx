@@ -7,6 +7,7 @@ import { Field } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { NarrowingLoader } from "@/components/ui/NarrowingLoader";
 import { OptionChip } from "@/components/ui/OptionChip";
+import { moveRadioFocus } from "@/lib/radioKeyboard";
 import type { IconName } from "@/components/ui/Icon";
 import type {
   BasicNeeds,
@@ -51,10 +52,12 @@ function ChoiceGroup<T extends string>({
   onChange: (v: T) => void;
   labelId: string;
 }) {
+  const rovingValue = value ?? options[0]?.value;
   return (
     <div
       role="radiogroup"
       aria-labelledby={labelId}
+      onKeyDown={moveRadioFocus}
       className="grid grid-cols-2 gap-2 sm:grid-cols-3"
     >
       {options.map((opt) => (
@@ -63,6 +66,7 @@ function ChoiceGroup<T extends string>({
           label={opt.label}
           selected={opt.value === value}
           onClick={() => onChange(opt.value)}
+          tabIndex={opt.value === rovingValue ? 0 : -1}
         />
       ))}
     </div>
@@ -212,6 +216,7 @@ export function BasicNeedsForm() {
           <div
             role="radiogroup"
             aria-labelledby="use-case-label"
+            onKeyDown={moveRadioFocus}
             className="grid grid-cols-1 gap-3 sm:grid-cols-2"
           >
             {USE_CASE_ORDER.map((uc) => (
@@ -225,6 +230,7 @@ export function BasicNeedsForm() {
                   setPrimaryUseCase(uc);
                   setErrors((prev) => ({ ...prev, use_case: undefined }));
                 }}
+                tabIndex={uc === (primaryUseCase ?? USE_CASE_ORDER[0]) ? 0 : -1}
               />
             ))}
           </div>

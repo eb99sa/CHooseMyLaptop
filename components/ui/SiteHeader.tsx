@@ -4,7 +4,7 @@ import { UI } from "@/lib/i18n";
 
 // Transparent EMO nav — no visible surface, no border; it sits on the charcoal
 // canvas (opaque charcoal only so scrolled content is occluded cleanly). Left:
-// brand mark. Right: one lavender ghost nav action.
+// brand mark. Right: one ghost nav action.
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 bg-[var(--color-canvas)]">
