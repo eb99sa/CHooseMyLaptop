@@ -24,6 +24,7 @@ export async function replaceSourceListings(
     currency: l.currency,
     availability: l.availability,
     url: safeHttpUrl(l.url),
+    image_url: safeHttpUrl(l.image_url),
     country: l.country,
     city_or_area: l.city_or_area,
     specs_json: l.specs,

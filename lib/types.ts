@@ -167,6 +167,7 @@ export interface LaptopListing {
   currency: string;
   availability: string; // "in_stock" | "out_of_stock" | "preorder" | "unknown"
   url?: string | null;
+  image_url?: string | null; // product photo from the store (proxied when rendered)
   country?: string | null;
   city_or_area?: string | null;
   specs: LaptopSpecs; // parsed from specs_json
