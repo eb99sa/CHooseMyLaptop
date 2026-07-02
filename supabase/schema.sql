@@ -75,6 +75,7 @@ create table if not exists public.laptop_listings (
   currency        text not null default 'KWD',
   availability    text default 'unknown',
   url             text,
+  image_url       text,
   country         text,
   city_or_area    text,
   specs_json      jsonb not null default '{}'::jsonb,

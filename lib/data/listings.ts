@@ -30,6 +30,7 @@ interface ListingRow {
   currency: string;
   availability: string | null;
   url: string | null;
+  image_url: string | null;
   country: string | null;
   city_or_area: string | null;
   specs_json: unknown;
@@ -51,6 +52,7 @@ export function mapListingRow(row: ListingRow): LaptopListing {
     currency: row.currency ?? "KWD",
     availability: row.availability ?? "unknown",
     url: row.url,
+    image_url: row.image_url ?? null,
     country: row.country,
     city_or_area: row.city_or_area,
     specs,

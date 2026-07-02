@@ -10,6 +10,8 @@ import { Tip } from "@/components/ui/Tip";
 import { UI } from "@/lib/i18n";
 import { specMeters, shortLaptopName, scoreTen, techSpecs } from "@/lib/specView";
 import { safeHttpUrl } from "@/lib/url";
+import { proxiedImageUrl } from "@/lib/images";
+import { ProductImage } from "@/components/report/ProductImage";
 import { cn } from "@/lib/utils";
 
 interface LaptopCardProps {
@@ -26,6 +28,7 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
   const s = listing.specs;
   const storeUrl = safeHttpUrl(listing.url);
   const reviewUrl = safeHttpUrl(review?.source_url);
+  const photoUrl = proxiedImageUrl(listing.image_url);
 
   return (
     <article
@@ -35,7 +38,9 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
       )}
     >
       <header className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1.5">
+        <div className="flex min-w-0 items-start gap-3">
+          {photoUrl && <ProductImage src={photoUrl} alt={listing.product_title} />}
+          <div className="min-w-0 space-y-1.5">
           {badgeLabel && (
             <Badge tone={highlight ? "signal" : "neutral"} className="mb-1">
               {badgeLabel}
@@ -70,6 +75,7 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
               <span dir="auto">{listing.store_name}</span>
             </p>
           )}
+          </div>
         </div>
         <FitScore value={final_score} size={72} label="التقييم" />
       </header>
