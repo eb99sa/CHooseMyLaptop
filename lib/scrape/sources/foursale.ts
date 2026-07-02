@@ -25,6 +25,7 @@ interface FsListing {
   desc_ar?: string;
   price?: number;
   slug?: string;
+  image?: string;
 }
 
 function mapListing(l: FsListing): NormalizedListing | null {
@@ -51,7 +52,7 @@ function mapListing(l: FsListing): NormalizedListing | null {
     currency: "KWD",
     availability: "in_stock", // a live classified is available
     url: l.slug ? `https://www.q84sale.com/en/listing/${l.slug}` : `https://www.q84sale.com/en/listing/${l.id}`,
-    image_url: null,
+    image_url: l.image ?? null,
     country: "Kuwait",
     city_or_area: null,
     rating: null,

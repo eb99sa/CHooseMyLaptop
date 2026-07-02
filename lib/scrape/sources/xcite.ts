@@ -23,6 +23,15 @@ interface XciteHit {
   averageRating?: number;
   rating?: number;
   reviewsCount?: number;
+  image_url?: string;
+  thumbnail_url?: string;
+}
+
+// X-cite's Amplience URLs come back protocol-relative (//cdn...); make them https.
+function xciteImage(h: XciteHit): string | null {
+  const raw = h.image_url || h.thumbnail_url;
+  if (!raw) return null;
+  return raw.startsWith("//") ? `https:${raw}` : raw;
 }
 
 function mapHit(h: XciteHit): NormalizedListing | null {
@@ -50,7 +59,7 @@ function mapHit(h: XciteHit): NormalizedListing | null {
     currency: "KWD",
     availability,
     url: h.slug ? `https://www.xcite.com/${h.slug}/p` : null,
-    image_url: null,
+    image_url: xciteImage(h),
     country: "Kuwait",
     city_or_area: null,
     rating: rating && rating > 0 ? rating : null,
