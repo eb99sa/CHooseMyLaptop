@@ -13,6 +13,10 @@ import type { Group, Mesh } from "three";
 // to -0.425 (open). We drive that per-route with a lerp, tilt the whole thing
 // toward the cursor, and swap the screen to the app's cyan glow.
 const MODEL = "/models/mac-draco.glb";
+// Self-hosted Draco decoder (public/draco/) — loads same-origin instead of the
+// gstatic CDN, so it isn't blocked by our CSP connect-src and keeps the hero a
+// zero-runtime-network-dep. Passing the path as useGLTF's 2nd arg sets it.
+const DRACO_PATH = "/draco/";
 const HINGE_CLOSED = 1.575;
 const HINGE_OPEN = -0.425;
 const SCENE_EMBER = "#ff4300"; // --scene accent — the ember filament (screen only)
@@ -20,13 +24,14 @@ const SCENE_EMBER = "#ff4300"; // --scene accent — the ember filament (screen 
 interface RealLaptopProps {
   openness?: number; // 0 = closed, 1 = fully open
   parallax?: number; // how strongly it tilts toward the cursor
+  screenGlow?: number; // emissive intensity of the ember screen
 }
 
-export function RealLaptop({ openness = 1, parallax = 0.45 }: RealLaptopProps) {
+export function RealLaptop({ openness = 1, parallax = 0.45, screenGlow = 1.15 }: RealLaptopProps) {
   const group = useRef<Group>(null);
   const lid = useRef<Group>(null);
   const pointer = useRef({ x: 0, y: 0 });
-  const { nodes, materials } = useGLTF(MODEL);
+  const { nodes, materials } = useGLTF(MODEL, DRACO_PATH);
   const mesh = (name: string) => (nodes[name] as Mesh).geometry;
 
   const target = HINGE_CLOSED + (HINGE_OPEN - HINGE_CLOSED) * THREE.MathUtils.clamp(openness, 0, 1);
@@ -66,7 +71,7 @@ export function RealLaptop({ openness = 1, parallax = 0.45 }: RealLaptopProps) {
             <meshStandardMaterial
               color="#0b1416"
               emissive={SCENE_EMBER}
-              emissiveIntensity={1.15}
+              emissiveIntensity={screenGlow}
               metalness={0}
               roughness={0.35}
               toneMapped={false}
@@ -87,4 +92,4 @@ export function RealLaptop({ openness = 1, parallax = 0.45 }: RealLaptopProps) {
   );
 }
 
-useGLTF.preload(MODEL);
+useGLTF.preload(MODEL, DRACO_PATH);
