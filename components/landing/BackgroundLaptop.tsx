@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { Environment, Lightformer, Float } from "@react-three/drei";
 import { RealLaptop } from "./RealLaptop";
+import StaticLaptop from "./StaticLaptop";
 
 // A single realistic laptop that lives in the BACKGROUND of every page (fixed,
 // behind content) and changes form — the lid opens/closes — as you navigate.
@@ -44,11 +45,22 @@ export default function BackgroundLaptop() {
     setUse3D(!reduced && !coarse && webgl);
   }, []);
 
-  if (!use3D) return null;
+  const isHero = pathname === "/";
+
+  // No WebGL (reduced-motion / touch / no-WebGL2): render a static CSS laptop on
+  // the landing hero so it's never empty; stay out of the way on inner routes.
+  if (!use3D) return isHero ? <StaticLaptop /> : null;
 
   // Perf (audit P2): the back-office laptop is closed + static, so skip the WebGL
   // scene entirely on /admin — no reason to run a continuous frameloop there.
   if (pathname?.startsWith("/admin")) return null;
+
+  // Prominent on the landing hero (bigger, lifted, brought forward, brighter);
+  // a calm ambient background on every other route.
+  const pos: [number, number, number] = isHero ? [4.4, -0.2, -2] : [6, -2, 0];
+  const scale = isHero ? 1.3 : 0.95;
+  const ambient = isHero ? 0.5 : 0.32;
+  const screenGlow = isHero ? 1.7 : 1.15;
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: -1 }}>
@@ -58,8 +70,17 @@ export default function BackgroundLaptop() {
         camera={{ position: [0, 0, -30], fov: 35 }}
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={0.32} />
+          <ambientLight intensity={ambient} />
           <directionalLight position={[10, 10, 8]} intensity={0.7} color="#ffffff" />
+
+          {/* Hero rig: a white key from the front-left + an ember rim so the
+              aluminium separates cleanly from the void and reads as the co-star. */}
+          {isHero && (
+            <>
+              <spotLight position={[-7, 7, -9]} angle={0.55} penumbra={0.85} intensity={2.6} color="#ffffff" />
+              <pointLight position={[11, 1, 5]} intensity={4.5} distance={22} color="#ff4300" />
+            </>
+          )}
 
           {/* Procedural studio env (no network HDRI) — a dark studio dome + dimmer
               softboxes so the aluminium reads as metal in a dark room; the ember
@@ -78,12 +99,12 @@ export default function BackgroundLaptop() {
               product's own light source. */}
           <pointLight position={[6, 1.5, -3]} intensity={6} distance={16} color="#ff4300" />
 
-          {/* Composed shot: pushed to the LEFT (opposite the RTL copy on the right),
-              larger, lower third. rotation[0,π,0] faces the screen at the camera;
-              RealLaptop tilts toward the cursor on top of the gentle Float. */}
-          <group position={[6, -2, 0]} rotation={[0, Math.PI, 0]} scale={0.95}>
+          {/* Composed shot: pushed to the LEFT (opposite the RTL copy on the right).
+              rotation[0,π,0] faces the screen at the camera; RealLaptop tilts
+              toward the cursor on top of the gentle Float. */}
+          <group position={pos} rotation={[0, Math.PI, 0]} scale={scale}>
             <Float speed={1} rotationIntensity={0.12} floatIntensity={0.5} floatingRange={[-0.1, 0.1]}>
-              <RealLaptop openness={opennessFor(pathname)} />
+              <RealLaptop openness={opennessFor(pathname)} screenGlow={screenGlow} />
             </Float>
           </group>
         </Suspense>

@@ -5,10 +5,12 @@ import type { NextConfig } from "next";
 // styles without a nonce unless a full nonce-propagation setup is wired in. This
 // is the pragmatic trade-off for now; the future hardening is a nonce-based CSP
 // (per-request nonce via middleware + strict-dynamic) that drops 'unsafe-inline'.
-// Dev needs 'unsafe-eval' for Next's HMR / react-refresh; production omits it.
+// 'wasm-unsafe-eval' lets the self-hosted Draco decoder (public/draco/) compile
+// its WebAssembly for the WebGL hero — it permits WASM only, not JS eval. Dev
+// additionally needs 'unsafe-eval' for Next's HMR / react-refresh (a superset).
 const SCRIPT_SRC =
   process.env.NODE_ENV === "production"
-    ? "'self' 'unsafe-inline'"
+    ? "'self' 'unsafe-inline' 'wasm-unsafe-eval'"
     : "'self' 'unsafe-inline' 'unsafe-eval'";
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
