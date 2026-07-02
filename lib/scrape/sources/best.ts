@@ -6,8 +6,9 @@ import type { NormalizedListing, StoreAdapter } from "@/lib/scrape/types";
 import { decodeEntities, guessBrand, looksLikeLaptop, normalizeSpecs } from "@/lib/scrape/specs";
 
 const API = "https://mrflex.best.com.kw/occ/v2/best/products/search";
+const MEDIA_HOST = "https://mrflex.best.com.kw"; // SAP Commerce /medias/ live here
 const FIELDS =
-  "products(name,code,url,price(DEFAULT),stock(DEFAULT),description,manufacturer,averageRating,numberOfReviews),pagination(DEFAULT)";
+  "products(name,code,url,price(DEFAULT),stock(DEFAULT),description,manufacturer,averageRating,numberOfReviews,images(url,format,imageType)),pagination(DEFAULT)";
 const CATEGORIES = ["laptops", "gaminglaptops", "macbooks"];
 
 interface BestProduct {
@@ -20,11 +21,25 @@ interface BestProduct {
   manufacturer?: string;
   averageRating?: number;
   numberOfReviews?: number;
+  images?: Array<{ url?: string; format?: string; imageType?: string }>;
 }
 
 function brandFromMfr(m: string): string {
   if (/^[A-Z]{2,4}$/.test(m)) return m; // HP, MSI, LG, ACER stays as-is
   return m.charAt(0).toUpperCase() + m.slice(1).toLowerCase();
+}
+
+// Prefer the large PRIMARY product image; the OCC url is relative to the media host.
+function bestImage(imgs?: BestProduct["images"]): string | null {
+  if (!imgs?.length) return null;
+  const pick =
+    imgs.find((i) => i.imageType === "PRIMARY" && i.format === "product") ||
+    imgs.find((i) => i.imageType === "PRIMARY") ||
+    imgs.find((i) => i.format === "product") ||
+    imgs[0];
+  const u = pick?.url;
+  if (!u) return null;
+  return u.startsWith("http") ? u : `${MEDIA_HOST}${u}`;
 }
 
 function mapProduct(p: BestProduct): NormalizedListing | null {
@@ -56,7 +71,7 @@ function mapProduct(p: BestProduct): NormalizedListing | null {
     currency: "KWD",
     availability,
     url,
-    image_url: null,
+    image_url: bestImage(p.images),
     country: "Kuwait",
     city_or_area: null,
     rating: typeof p.averageRating === "number" && p.averageRating > 0 ? p.averageRating : null,
