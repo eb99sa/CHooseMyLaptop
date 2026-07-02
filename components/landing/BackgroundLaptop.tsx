@@ -31,46 +31,60 @@ function opennessFor(pathname: string | null): number {
 
 export default function BackgroundLaptop() {
   const pathname = usePathname();
-  const [use3D, setUse3D] = useState(false);
+  const [caps, setCaps] = useState({ use3D: false, mobile: false });
 
   useEffect(() => {
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    // WebGL2 support is fixed for the session; reduced-motion + viewport can change.
     let webgl = false;
     try {
       webgl = !!document.createElement("canvas").getContext("webgl2");
     } catch {
       webgl = false;
     }
-    setUse3D(!reduced && !coarse && webgl);
+    const reducedMq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mobileMq = window.matchMedia("(max-width: 640px)");
+    // Touch is NOT a disqualifier — modern phones run this fine. Only reduced-motion
+    // or a missing WebGL2 context fall back to the static laptop.
+    const update = () => setCaps({ use3D: !reducedMq.matches && webgl, mobile: mobileMq.matches });
+    update();
+    reducedMq.addEventListener("change", update);
+    mobileMq.addEventListener("change", update);
+    return () => {
+      reducedMq.removeEventListener("change", update);
+      mobileMq.removeEventListener("change", update);
+    };
   }, []);
 
+  const { use3D, mobile } = caps;
   const isHero = pathname === "/";
 
-  // No WebGL (reduced-motion / touch / no-WebGL2): render a static CSS laptop on
-  // the landing hero so it's never empty; stay out of the way on inner routes.
+  // No WebGL (reduced-motion / no-WebGL2): render a static CSS laptop on the
+  // landing hero so it's never empty; stay out of the way on inner routes.
   if (!use3D) return isHero ? <StaticLaptop /> : null;
 
   // Perf (audit P2): the back-office laptop is closed + static, so skip the WebGL
   // scene entirely on /admin — no reason to run a continuous frameloop there.
   if (pathname?.startsWith("/admin")) return null;
 
-  // Prominent on the landing hero (bigger, lifted, brought forward, brighter);
-  // a calm ambient background on every other route.
-  const pos: [number, number, number] = isHero ? [4.4, -0.2, -2] : [6, -2, 0];
-  const scale = isHero ? 1.3 : 0.95;
-  const ambient = isHero ? 0.5 : 0.32;
-  const screenGlow = isHero ? 1.7 : 1.15;
+  // Prominent on the landing hero; a calm ambient background elsewhere. On the
+  // hero, mobile gets its own composition (lower + a touch smaller) because the
+  // copy fills the whole column instead of leaving the left half open.
+  const rig: { pos: [number, number, number]; scale: number; ambient: number; screenGlow: number } =
+    !isHero
+      ? { pos: [6, -2, 0], scale: 0.95, ambient: 0.32, screenGlow: 1.15 }
+      : mobile
+        ? { pos: [0.4, -3.1, -1], scale: 0.92, ambient: 0.55, screenGlow: 1.6 }
+        : { pos: [4.4, -0.2, -2], scale: 1.3, ambient: 0.5, screenGlow: 1.7 };
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: -1 }}>
       <Canvas
-        dpr={[1, 1.75]}
+        dpr={mobile ? [1, 1.5] : [1, 1.75]}
         gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}
         camera={{ position: [0, 0, -30], fov: 35 }}
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={ambient} />
+          <ambientLight intensity={rig.ambient} />
           <directionalLight position={[10, 10, 8]} intensity={0.7} color="#ffffff" />
 
           {/* Hero rig: a white key from the front-left + an ember rim so the
@@ -102,9 +116,9 @@ export default function BackgroundLaptop() {
           {/* Composed shot: pushed to the LEFT (opposite the RTL copy on the right).
               rotation[0,π,0] faces the screen at the camera; RealLaptop tilts
               toward the cursor on top of the gentle Float. */}
-          <group position={pos} rotation={[0, Math.PI, 0]} scale={scale}>
+          <group position={rig.pos} rotation={[0, Math.PI, 0]} scale={rig.scale}>
             <Float speed={1} rotationIntensity={0.12} floatIntensity={0.5} floatingRange={[-0.1, 0.1]}>
-              <RealLaptop openness={opennessFor(pathname)} screenGlow={screenGlow} />
+              <RealLaptop openness={opennessFor(pathname)} screenGlow={rig.screenGlow} />
             </Float>
           </group>
         </Suspense>
