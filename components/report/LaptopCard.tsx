@@ -9,6 +9,7 @@ import { SpecReveal } from "@/components/report/SpecReveal";
 import { Tip } from "@/components/ui/Tip";
 import { UI } from "@/lib/i18n";
 import { specMeters, shortLaptopName, scoreTen, techSpecs } from "@/lib/specView";
+import { safeHttpUrl } from "@/lib/url";
 import { cn } from "@/lib/utils";
 
 interface LaptopCardProps {
@@ -23,6 +24,8 @@ interface LaptopCardProps {
 export function LaptopCard({ scored, highlight = false, badgeLabel, review }: LaptopCardProps) {
   const { listing, final_score, roi_score, reasons, warnings } = scored;
   const s = listing.specs;
+  const storeUrl = safeHttpUrl(listing.url);
+  const reviewUrl = safeHttpUrl(review?.source_url);
 
   return (
     <article
@@ -151,9 +154,9 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
                   {review.cons.join("، ")}
                 </p>
               )}
-              {review.source_url && (
+              {reviewUrl && (
                 <a
-                  href={review.source_url}
+                  href={reviewUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block text-[var(--color-faint)] underline"
@@ -171,9 +174,9 @@ export function LaptopCard({ scored, highlight = false, badgeLabel, review }: La
         )}
       </div>
 
-      {listing.url && (
+      {storeUrl && (
         <a
-          href={listing.url}
+          href={storeUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="btn btn-ghost mt-auto text-sm"

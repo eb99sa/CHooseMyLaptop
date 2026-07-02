@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient, isDbConfigured } from "@/lib/supabase/service";
 import { getSessionForViewer, saveAnswersAndRecommend } from "@/lib/services/sessions";
 import { normalizeAnswers } from "@/lib/validation";
+import { rateLimitAllowed, clientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -37,12 +38,18 @@ export async function POST(
 
   try {
     const supabase = createServiceClient();
+    // Wallet guard: /answers can re-run the paid pipeline; cap per IP (the
+    // idempotency short-circuit already blocks re-runs on a completed session).
+    if (!(await rateLimitAllowed(supabase, `answers:${clientIp(req)}`, 30, 3600))) {
+      return NextResponse.json(
+        { error: "rate_limited", message: "محاولات كثيرة. حاول بعد شوي." },
+        { status: 429 },
+      );
+    }
     const report = await saveAnswersAndRecommend(supabase, sessionId, answers);
     return NextResponse.json({ ok: true, session_id: sessionId, source: report.source });
   } catch (err) {
-    return NextResponse.json(
-      { error: "server_error", message: (err as Error).message },
-      { status: 500 },
-    );
+    console.error("[api/answers] error:", err);
+    return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
 }

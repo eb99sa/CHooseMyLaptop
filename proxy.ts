@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_COOKIE, verifyAdminToken } from "@/lib/admin-auth";
+import { securityEvent } from "@/lib/log";
 
 // Next.js 16 "proxy" convention. The public app is fully anonymous (no auth),
 // so the only thing we guard is the admin area: /admin/* and /api/admin/*.
@@ -14,6 +15,12 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get(ADMIN_COOKIE)?.value;
   const ok = await verifyAdminToken(token, Date.now());
   if (ok) return NextResponse.next();
+
+  // A09: log every denied admin access attempt (edge-safe).
+  securityEvent("admin_access_denied", {
+    path: pathname,
+    ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown",
+  });
 
   if (pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });

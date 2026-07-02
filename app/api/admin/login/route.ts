@@ -5,6 +5,9 @@ import {
   verifyAdminPassword,
 } from "@/lib/admin-auth";
 import { clearAdminCookie, setAdminCookie } from "@/lib/admin-cookies";
+import { createServiceClient, isDbConfigured } from "@/lib/supabase/service";
+import { rateLimitAllowed, clientIp } from "@/lib/rate-limit";
+import { securityEvent } from "@/lib/log";
 
 export const runtime = "nodejs";
 
@@ -15,6 +18,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "not_configured" }, { status: 503 });
   }
 
+  const ip = clientIp(req);
+  // Brute-force guard on the single shared admin password (8 tries / 10 min / IP).
+  if (isDbConfigured() && !(await rateLimitAllowed(createServiceClient(), `admin_login:${ip}`, 8, 600))) {
+    securityEvent("rate_limited", { route: "admin_login", ip });
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -23,12 +33,14 @@ export async function POST(req: Request) {
   }
 
   const password = (body as { password?: unknown })?.password;
-  if (!verifyAdminPassword(password)) {
+  if (!(await verifyAdminPassword(password))) {
+    securityEvent("admin_login_failure", { ip });
     return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
   }
 
   const token = await createAdminToken(Date.now());
   await setAdminCookie(token);
+  securityEvent("admin_login_success", { ip });
   return NextResponse.json({ ok: true });
 }
 
