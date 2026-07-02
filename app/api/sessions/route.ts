@@ -10,6 +10,31 @@ export const runtime = "nodejs";
 // POST /api/sessions — create an anonymous session from Page 1 + generate
 // follow-up questions, and set the session cookie. No login required.
 export async function POST(req: Request) {
+  // TEMP DIAGNOSTIC (remove after): ?diag=cml-7q2 reports the deployed Supabase
+  // config WITHOUT exposing secrets (key type + length + whitespace only) and does
+  // a read-only DB ping so we can see the exact runtime error on Vercel.
+  if (new URL(req.url).searchParams.get("diag") === "cml-7q2") {
+    const k = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+    const out: Record<string, unknown> = {
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+      keyPrefix: k.slice(0, 10),
+      keyLen: k.length,
+      keyHasWhitespace: /\s/.test(k),
+      dbConfigured: isDbConfigured(),
+    };
+    try {
+      const sb = createServiceClient();
+      const { error } = await sb
+        .from("anonymous_recommendation_sessions")
+        .select("id")
+        .limit(1);
+      out.dbSelectError = error ? error.message : null;
+    } catch (e) {
+      out.dbThrow = (e as Error)?.message ?? String(e);
+    }
+    return NextResponse.json({ diag: out });
+  }
+
   if (!isDbConfigured()) {
     return NextResponse.json(
       { error: "not_configured", message: "الخدمة غير مهيأة بعد. حاول لاحقاً." },
